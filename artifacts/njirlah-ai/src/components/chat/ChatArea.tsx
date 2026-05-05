@@ -2,13 +2,40 @@ import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChatStore } from "@/store/chat-store";
 import { ChatBubble, TypingIndicator } from "./ChatBubble";
-import { Sparkles, Cpu, Zap, Lock } from "lucide-react";
+import { HeroBrandText } from "@/components/ui/TypewriterText";
+import { UnicornLogo } from "@/components/ui/UnicornLogo";
+import { Cpu, Zap, Lock, Code2, Sparkles } from "lucide-react";
 
-const welcomeFeatures = [
-  { icon: <Cpu size={14} />, title: "Cloudflare Workers AI", desc: "12+ models built-in, zero config", badge: "FREE" },
-  { icon: <Zap size={14} />, title: "OpenRouter BYOK", desc: "Hundreds of models, your key", badge: "BYOK" },
-  { icon: <Lock size={14} />, title: "AES-GCM Encrypted", desc: "Key stays in your browser only", badge: "SECURE" },
+const BENTO_FEATURES = [
+  { icon: <Cpu size={13} />, title: "Cloudflare Workers AI", desc: "12+ built-in models, no setup", badge: "FREE", color: "violet" },
+  { icon: <Zap size={13} />, title: "OpenRouter BYOK", desc: "200+ models with your API key", badge: "BYOK", color: "orange" },
+  { icon: <Lock size={13} />, title: "AES-GCM Encrypted", desc: "Key never leaves your browser", badge: "SECURE", color: "green" },
+  { icon: <Code2 size={13} />, title: "Syntax Highlighting", desc: "20+ languages with live preview", badge: "DEV", color: "blue" },
 ];
+
+const BADGE_COLORS: Record<string, string> = {
+  violet: "text-violet-400/70 border-violet-500/20 bg-violet-500/[0.05]",
+  orange: "text-orange-400/70 border-orange-500/20 bg-orange-500/[0.05]",
+  green: "text-green-400/70 border-green-500/20 bg-green-500/[0.05]",
+  blue: "text-blue-400/70 border-blue-500/20 bg-blue-500/[0.05]",
+};
+
+const PROMPTS = [
+  { lang: "py", text: "Tulis REST API dengan FastAPI dan PostgreSQL" },
+  { lang: "js", text: "Buat komponen React dengan TypeScript dan Tailwind" },
+  { lang: "html", text: "Buat landing page modern dengan animasi CSS" },
+  { lang: "sql", text: "Optimasi query SQL dengan indexing strategy" },
+];
+
+const container = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06 } },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } },
+};
 
 export function ChatArea() {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -22,82 +49,73 @@ export function ChatArea() {
 
   if (!chat || messages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8 overflow-hidden">
+      <div className="flex-1 flex items-center justify-center p-6 overflow-hidden">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="w-full max-w-xl"
+          variants={container}
+          initial="hidden"
+          animate="visible"
+          className="w-full max-w-2xl"
         >
-          {/* Hero */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1, duration: 0.4 }}
-            className="text-center mb-10"
-          >
+          {/* Hero brand */}
+          <motion.div variants={item} className="text-center mb-10">
             <motion.div
-              animate={{ rotate: [0, 8, -6, 4, 0] }}
-              transition={{ duration: 3, repeat: Infinity, repeatDelay: 4 }}
-              className="text-5xl mb-5 inline-block"
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 160, damping: 18, delay: 0.05 }}
+              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl border border-violet-500/20 bg-violet-500/[0.04] mb-5"
             >
-              🦄
+              <UnicornLogo size={44} animated />
             </motion.div>
-            <h1 className="text-3xl font-bold text-white tracking-tight font-space-grotesk mb-2">
-              NJIRLAH AI
-            </h1>
-            <p className="text-sm text-white/35 font-mono tracking-wide">
-              Chat AI Tersesat, Bebas Pake Kunci Sendiri
-            </p>
+            <HeroBrandText />
           </motion.div>
 
-          {/* Bento feature grid */}
-          <div className="grid grid-cols-3 gap-2 mb-6">
-            {welcomeFeatures.map((f, i) => (
+          {/* Bento grid */}
+          <motion.div variants={item} className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+            {BENTO_FEATURES.map((f) => (
               <motion.div
                 key={f.title}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + i * 0.08, duration: 0.3, ease: "easeOut" }}
-                whileHover={{ backgroundColor: "rgba(255,255,255,0.03)", y: -2 }}
-                className="relative p-3.5 rounded-lg border border-white/[0.06] bg-white/[0.01] cursor-default transition-colors"
+                whileHover={{ y: -2, backgroundColor: "rgba(255,255,255,0.025)" }}
+                transition={{ duration: 0.15 }}
+                className="relative p-3.5 rounded-lg border border-white/[0.06] bg-white/[0.01] cursor-default"
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-white/30">{f.icon}</span>
-                  <span className="text-[9px] font-bold tracking-widest text-violet-400/60 font-mono">{f.badge}</span>
+                <div className="flex items-start justify-between mb-2.5">
+                  <span className="text-white/25">{f.icon}</span>
+                  <span className={`text-[9px] font-bold tracking-widest font-mono border px-1.5 py-0.5 rounded ${BADGE_COLORS[f.color]}`}>
+                    {f.badge}
+                  </span>
                 </div>
-                <p className="text-xs font-medium text-white/70 mb-1">{f.title}</p>
-                <p className="text-[11px] text-white/25 leading-relaxed">{f.desc}</p>
+                <p className="text-[11px] font-semibold text-white/65 mb-0.5 leading-tight">{f.title}</p>
+                <p className="text-[10px] text-white/25 leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           {/* Prompt suggestions */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="space-y-1.5"
-          >
-            <p className="text-[10px] text-white/20 font-mono tracking-widest uppercase mb-2">Try asking</p>
-            {[
-              "Jelaskan cara kerja transformer architecture",
-              "Tulis fungsi Python untuk sorting algoritma",
-              "Apa perbedaan React dan Svelte?",
-            ].map((prompt, i) => (
-              <motion.button
-                key={prompt}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.55 + i * 0.06 }}
-                whileHover={{ x: 4, backgroundColor: "rgba(255,255,255,0.03)" }}
-                whileTap={{ scale: 0.99 }}
-                className="w-full text-left px-3.5 py-2.5 rounded-md border border-white/[0.05] text-xs text-white/40 hover:text-white/65 transition-colors flex items-center gap-2 group"
-              >
-                <Sparkles size={11} className="text-violet-400/30 group-hover:text-violet-400/60 flex-shrink-0 transition-colors" />
-                {prompt}
-              </motion.button>
-            ))}
+          <motion.div variants={item}>
+            <p className="text-[9px] text-white/15 font-mono tracking-[0.18em] uppercase mb-2 px-0.5">
+              Try asking
+            </p>
+            <div className="space-y-1">
+              {PROMPTS.map((p) => (
+                <motion.button
+                  key={p.text}
+                  whileHover={{ x: 3, backgroundColor: "rgba(255,255,255,0.025)" }}
+                  whileTap={{ scale: 0.99 }}
+                  className="w-full text-left px-3.5 py-2.5 rounded-lg border border-white/[0.05] hover:border-white/[0.09] text-xs text-white/35 hover:text-white/60 transition-all flex items-center gap-3 group"
+                >
+                  <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border flex-shrink-0 ${
+                    p.lang === "py" ? "text-green-400/60 border-green-500/15 bg-green-500/[0.04]"
+                    : p.lang === "js" ? "text-yellow-400/60 border-yellow-500/15 bg-yellow-500/[0.04]"
+                    : p.lang === "html" ? "text-rose-400/60 border-rose-500/15 bg-rose-500/[0.04]"
+                    : "text-sky-400/60 border-sky-500/15 bg-sky-500/[0.04]"
+                  }`}>
+                    {p.lang.toUpperCase()}
+                  </span>
+                  <span className="flex-1">{p.text}</span>
+                  <Sparkles size={11} className="text-violet-400/20 group-hover:text-violet-400/50 flex-shrink-0 transition-colors" />
+                </motion.button>
+              ))}
+            </div>
           </motion.div>
         </motion.div>
       </div>
@@ -118,9 +136,7 @@ export function ChatArea() {
             />
           ))}
         </AnimatePresence>
-        {isStreaming && messages[messages.length - 1]?.role !== "assistant" && (
-          <TypingIndicator />
-        )}
+        {isStreaming && messages[messages.length - 1]?.role !== "assistant" && <TypingIndicator />}
         <div ref={bottomRef} />
       </div>
     </div>
