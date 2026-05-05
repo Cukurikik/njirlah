@@ -3,8 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Monitor, Code2, RefreshCw, ExternalLink,
   MousePointer2, AlertTriangle, Send, ChevronDown,
+  Columns2, Check, RotateCcw, Loader2,
 } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
+import { useChatStore } from "@/store/chat-store";
+import { useApiKeyStore } from "@/store/api-key-store";
 
 interface LivePreviewModalProps {
   open: boolean;
@@ -16,6 +19,13 @@ interface LivePreviewModalProps {
 type IframeMessage =
   | { type: "njirlah_elementSelected"; tag: string; id: string | null; className: string | null; text: string; outerHTML: string }
   | { type: "njirlah_runtimeError"; message: string; source?: string | null; line?: number; col?: number };
+
+type DiffState = {
+  original: string;
+  suggested: string;
+  isStreaming: boolean;
+  error: string | null;
+};
 
 const ELEMENT_SELECTOR_SCRIPT = `
 <script>
@@ -103,6 +113,205 @@ ${selectionMode ? ELEMENT_SELECTOR_SCRIPT : ""}
 </html>`;
 }
 
+/** Extract first ```html (or any) code block content from AI response */
+function extractCodeBlock(text: string): string {
+  const match = text.match(/```(?:html|xml|svg)?\s*\n?([\s\S]*?)```/);
+  if (match) return match[1].trim();
+  // fallback: strip all backtick fences
+  return text.replace(/```[^\n]*\n?/g, "").trim();
+}
+
+/** Simple line-based diff: returns array of {line, type: 'same'|'removed'|'added'} */
+function computeDiff(oldText: string, newText: string) {
+  const oldLines = oldText.split("\n");
+  const newLines = newText.split("\n");
+
+  // LCS table
+  const m = oldLines.length;
+  const n = newLines.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = m - 1; i >= 0; i--) {
+    for (let j = n - 1; j >= 0; j--) {
+      if (oldLines[i] === newLines[j]) {
+        dp[i][j] = 1 + dp[i + 1][j + 1];
+      } else {
+        dp[i][j] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+      }
+    }
+  }
+
+  const leftLines: { line: string; type: "same" | "removed" | "added" }[] = [];
+  const rightLines: { line: string; type: "same" | "removed" | "added" }[] = [];
+
+  let i = 0, j = 0;
+  while (i < m || j < n) {
+    if (i < m && j < n && oldLines[i] === newLines[j]) {
+      leftLines.push({ line: oldLines[i], type: "same" });
+      rightLines.push({ line: newLines[j], type: "same" });
+      i++; j++;
+    } else if (j < n && (i >= m || dp[i][j + 1] >= dp[i + 1][j])) {
+      leftLines.push({ line: "", type: "added" });
+      rightLines.push({ line: newLines[j], type: "added" });
+      j++;
+    } else {
+      leftLines.push({ line: oldLines[i], type: "removed" });
+      rightLines.push({ line: "", type: "removed" });
+      i++;
+    }
+  }
+
+  return { leftLines, rightLines };
+}
+
+function DiffPanel({ diff, isStreaming }: {
+  diff: DiffState;
+  isStreaming: boolean;
+}) {
+  const suggested = isStreaming ? diff.suggested : extractCodeBlock(diff.suggested);
+  const { leftLines, rightLines } = computeDiff(diff.original, suggested);
+
+  const renderLines = (lines: { line: string; type: "same" | "removed" | "added" }[], side: "left" | "right") => (
+    <div className="flex-1 overflow-auto font-mono text-[11px] leading-[1.7] min-w-0">
+      {lines.map((entry, idx) => {
+        const bg =
+          entry.type === "removed" && side === "left" ? "bg-red-500/10 border-l-2 border-red-500/50" :
+          entry.type === "added" && side === "right" ? "bg-green-500/10 border-l-2 border-green-500/50" :
+          entry.type === "removed" && side === "right" ? "opacity-0 pointer-events-none" :
+          entry.type === "added" && side === "left" ? "opacity-0 pointer-events-none" :
+          "";
+        const textColor =
+          entry.type === "removed" && side === "left" ? "text-red-300/80" :
+          entry.type === "added" && side === "right" ? "text-green-300/80" :
+          "text-white/55";
+        const prefix =
+          entry.type === "removed" && side === "left" ? "- " :
+          entry.type === "added" && side === "right" ? "+ " :
+          "  ";
+        return (
+          <div key={idx} className={`px-3 whitespace-pre-wrap break-all ${bg} ${textColor}`}>
+            <span className="select-none opacity-40 mr-1">{prefix}</span>{entry.line}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Column headers */}
+      <div className="flex border-b border-white/[0.06] flex-shrink-0">
+        <div className="flex-1 flex items-center gap-1.5 px-3 py-1.5 border-r border-white/[0.06]">
+          <div className="w-2 h-2 rounded-full bg-red-400/60" />
+          <span className="text-[10px] font-mono text-white/30">Original</span>
+        </div>
+        <div className="flex-1 flex items-center gap-1.5 px-3 py-1.5">
+          <div className="w-2 h-2 rounded-full bg-green-400/60" />
+          <span className="text-[10px] font-mono text-white/30">Suggested</span>
+          {isStreaming && (
+            <motion.span
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1, repeat: Infinity }}
+              className="text-[10px] text-violet-400/60 font-mono ml-1"
+            >
+              generating…
+            </motion.span>
+          )}
+        </div>
+      </div>
+
+      {/* Side-by-side diff */}
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-auto border-r border-white/[0.06] py-2">
+          {renderLines(leftLines, "left")}
+        </div>
+        <div className="flex-1 overflow-auto py-2">
+          {renderLines(rightLines, "right")}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+async function streamElementSuggestion(
+  outerHTML: string,
+  instruction: string,
+  onChunk: (chunk: string) => void,
+  signal: AbortSignal,
+): Promise<string> {
+  const { selectedProvider, selectedModel } = useChatStore.getState();
+  const { openRouterKey } = useApiKeyStore.getState();
+
+  const messages = [
+    {
+      role: "system" as const,
+      content: "You are an HTML element editor. When given an HTML element and an instruction, return ONLY the updated HTML element inside a ```html code block. Do not explain or add any other text.",
+    },
+    {
+      role: "user" as const,
+      content: `Element:\n\`\`\`html\n${outerHTML}\n\`\`\`\n\nInstruction: ${instruction.trim()}\n\nReturn ONLY the updated HTML element in a \`\`\`html code block.`,
+    },
+  ];
+
+  let response: Response;
+  if (selectedProvider === "replit") {
+    response = await fetch("/api/replit/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: selectedModel, messages, stream: true }),
+      signal,
+    });
+  } else if (selectedProvider === "cloudflare") {
+    response = await fetch("/api/cloudflare/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: selectedModel, messages, stream: true }),
+      signal,
+    });
+  } else {
+    if (!openRouterKey) throw new Error("OpenRouter API key required");
+    response = await fetch("/api/openrouter/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": openRouterKey },
+      body: JSON.stringify({ model: selectedModel, messages, stream: true }),
+      signal,
+    });
+  }
+
+  if (!response.ok) throw new Error(`Request failed (${response.status})`);
+  if (!response.body) throw new Error("No response body");
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let full = "";
+  let buf = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split("\n");
+    buf = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data:")) continue;
+      const data = line.slice(5).trim();
+      if (data === "[DONE]") continue;
+      try {
+        const parsed = JSON.parse(data) as {
+          choices?: Array<{ delta?: { content?: string } }>;
+          result?: string;
+        };
+        let chunk = "";
+        if (parsed.choices?.[0]?.delta?.content) chunk = parsed.choices[0].delta.content;
+        else if (typeof parsed.result === "string") chunk = parsed.result;
+        if (chunk) { full += chunk; onChunk(chunk); }
+      } catch { /* skip */ }
+    }
+  }
+
+  return full;
+}
+
 export function LivePreviewModal({ open, onClose, code, language }: LivePreviewModalProps) {
   const [view, setView] = useState<"preview" | "source">("preview");
   const [key, setKey] = useState(0);
@@ -110,7 +319,9 @@ export function LivePreviewModal({ open, onClose, code, language }: LivePreviewM
   const [selectedEl, setSelectedEl] = useState<IframeMessage & { type: "njirlah_elementSelected" } | null>(null);
   const [runtimeError, setRuntimeError] = useState<{ message: string; source?: string | null; line?: number } | null>(null);
   const [instruction, setInstruction] = useState("");
+  const [diffState, setDiffState] = useState<DiffState | null>(null);
   const instructionRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const { sendMessage } = useChat();
 
   const srcDoc = buildPreviewHtml(code, language, selectionMode);
@@ -125,6 +336,7 @@ export function LivePreviewModal({ open, onClose, code, language }: LivePreviewM
     const msg = e.data as IframeMessage;
     if (msg.type === "njirlah_elementSelected") {
       setSelectedEl(msg);
+      setDiffState(null);
       setRuntimeError(null);
       setTimeout(() => instructionRef.current?.focus(), 50);
     } else if (msg.type === "njirlah_runtimeError") {
@@ -138,17 +350,67 @@ export function LivePreviewModal({ open, onClose, code, language }: LivePreviewM
   }, [handleMessage]);
 
   useEffect(() => {
-    if (!open) { setSelectedEl(null); setRuntimeError(null); setSelectionMode(false); }
+    if (!open) {
+      setSelectedEl(null);
+      setRuntimeError(null);
+      setSelectionMode(false);
+      setDiffState(null);
+      abortRef.current?.abort();
+    }
   }, [open]);
 
-  const applyInstruction = () => {
+  const previewChange = async () => {
+    if (!instruction.trim() || !selectedEl) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setDiffState({ original: selectedEl.outerHTML, suggested: "", isStreaming: true, error: null });
+
+    try {
+      await streamElementSuggestion(
+        selectedEl.outerHTML,
+        instruction,
+        (chunk) => {
+          setDiffState((prev) => prev ? { ...prev, suggested: prev.suggested + chunk } : null);
+        },
+        controller.signal,
+      );
+      setDiffState((prev) => prev ? { ...prev, isStreaming: false } : null);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "AbortError") return;
+      const msg = err instanceof Error ? err.message : "Failed to generate suggestion";
+      setDiffState((prev) => prev ? { ...prev, isStreaming: false, error: msg } : null);
+    }
+  };
+
+  const confirmChange = () => {
     if (!instruction.trim() || !selectedEl) return;
     const prompt = `I have this element in my HTML preview:\n\`\`\`html\n${selectedEl.outerHTML}\n\`\`\`\n\n${instruction.trim()}`;
     sendMessage(prompt);
     setInstruction("");
     setSelectedEl(null);
+    setDiffState(null);
     onClose();
   };
+
+  const discardDiff = () => {
+    abortRef.current?.abort();
+    setDiffState(null);
+    setTimeout(() => instructionRef.current?.focus(), 50);
+  };
+
+  const applyInstruction = () => {
+    if (!instruction.trim() || !selectedEl) return;
+    if (diffState) {
+      confirmChange();
+    } else {
+      previewChange();
+    }
+  };
+
+  const hasDiff = diffState !== null;
+  const diffReady = hasDiff && !diffState.isStreaming && !diffState.error;
 
   return (
     <AnimatePresence>
@@ -205,7 +467,7 @@ export function LivePreviewModal({ open, onClose, code, language }: LivePreviewM
                 {/* Element selection toggle */}
                 {view === "preview" && (
                   <motion.button
-                    onClick={() => { setSelectionMode(!selectionMode); setSelectedEl(null); setKey(k => k + 1); }}
+                    onClick={() => { setSelectionMode(!selectionMode); setSelectedEl(null); setDiffState(null); setKey(k => k + 1); }}
                     whileTap={{ scale: 0.93 }}
                     animate={{
                       backgroundColor: selectionMode ? "rgba(139,92,246,0.15)" : "transparent",
@@ -319,9 +581,9 @@ export function LivePreviewModal({ open, onClose, code, language }: LivePreviewM
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="border-t border-violet-500/25 bg-violet-500/[0.04] overflow-hidden"
+                  className="border-t border-violet-500/25 bg-violet-500/[0.04] overflow-hidden flex-shrink-0"
                 >
-                  <div className="px-4 py-3">
+                  <div className="px-4 pt-3 pb-2">
                     {/* Element info */}
                     <div className="flex items-center gap-2 mb-2.5">
                       <MousePointer2 size={11} className="text-violet-400/70" />
@@ -336,36 +598,95 @@ export function LivePreviewModal({ open, onClose, code, language }: LivePreviewM
                           "{selectedEl.text.slice(0, 50)}{selectedEl.text.length > 50 ? "…" : ""}"
                         </span>
                       )}
-                      <button onClick={() => setSelectedEl(null)} className="ml-auto text-white/20 hover:text-white/50 transition-colors">
+                      <button onClick={() => { setSelectedEl(null); setDiffState(null); abortRef.current?.abort(); }} className="ml-auto text-white/20 hover:text-white/50 transition-colors">
                         <X size={11} />
                       </button>
                     </div>
 
-                    {/* Instruction input */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 flex items-center gap-2 bg-black/40 border border-white/[0.07] rounded-md px-3 py-2 focus-within:border-violet-500/35 transition-colors">
-                        <input
-                          ref={instructionRef}
-                          value={instruction}
-                          onChange={(e) => setInstruction(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && applyInstruction()}
-                          placeholder='Give an instruction, e.g. "Make this button blue and larger"'
-                          className="flex-1 bg-transparent text-[12px] text-white/75 placeholder-white/20 focus:outline-none font-sans"
-                        />
+                    {/* Instruction input — hidden while diff is showing */}
+                    {!hasDiff && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 flex items-center gap-2 bg-black/40 border border-white/[0.07] rounded-md px-3 py-2 focus-within:border-violet-500/35 transition-colors">
+                          <input
+                            ref={instructionRef}
+                            value={instruction}
+                            onChange={(e) => setInstruction(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && applyInstruction()}
+                            placeholder='Give an instruction, e.g. "Make this button blue and larger"'
+                            className="flex-1 bg-transparent text-[12px] text-white/75 placeholder-white/20 focus:outline-none font-sans"
+                          />
+                        </div>
+                        <motion.button
+                          onClick={previewChange}
+                          disabled={!instruction.trim()}
+                          whileHover={instruction.trim() ? { scale: 1.04 } : {}}
+                          whileTap={instruction.trim() ? { scale: 0.95 } : {}}
+                          animate={{ backgroundColor: instruction.trim() ? "rgba(139,92,246,0.8)" : "rgba(255,255,255,0.04)" }}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-mono font-medium transition-all disabled:cursor-not-allowed flex-shrink-0"
+                          style={{ color: instruction.trim() ? "white" : "rgba(255,255,255,0.25)" }}
+                        >
+                          <Columns2 size={11} /> Preview Diff
+                        </motion.button>
                       </div>
-                      <motion.button
-                        onClick={applyInstruction}
-                        disabled={!instruction.trim()}
-                        whileHover={instruction.trim() ? { scale: 1.04 } : {}}
-                        whileTap={instruction.trim() ? { scale: 0.95 } : {}}
-                        animate={{ backgroundColor: instruction.trim() ? "rgba(139,92,246,0.8)" : "rgba(255,255,255,0.04)" }}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-md text-[12px] font-mono font-medium transition-all disabled:cursor-not-allowed"
-                        style={{ color: instruction.trim() ? "white" : "rgba(255,255,255,0.25)" }}
+                    )}
+
+                    {/* Diff action bar — shown once diff starts */}
+                    {hasDiff && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-2"
                       >
-                        <Send size={11} /> Apply
-                      </motion.button>
-                    </div>
+                        <span className="text-[11px] font-mono text-white/30 flex-1 truncate">
+                          "{instruction}"
+                        </span>
+                        <motion.button
+                          onClick={discardDiff}
+                          whileTap={{ scale: 0.95 }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-mono border border-white/[0.08] text-white/40 hover:text-white/70 hover:border-white/20 transition-all"
+                        >
+                          <RotateCcw size={10} /> Discard
+                        </motion.button>
+                        <motion.button
+                          onClick={confirmChange}
+                          disabled={!diffReady}
+                          whileHover={diffReady ? { scale: 1.04 } : {}}
+                          whileTap={diffReady ? { scale: 0.95 } : {}}
+                          animate={{ backgroundColor: diffReady ? "rgba(34,197,94,0.75)" : "rgba(255,255,255,0.04)" }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-mono font-medium transition-all disabled:cursor-not-allowed"
+                          style={{ color: diffReady ? "white" : "rgba(255,255,255,0.3)" }}
+                        >
+                          {diffState?.isStreaming ? (
+                            <><Loader2 size={10} className="animate-spin" /> Generating…</>
+                          ) : (
+                            <><Check size={10} /> Apply to Chat</>
+                          )}
+                        </motion.button>
+                      </motion.div>
+                    )}
                   </div>
+
+                  {/* ── Diff panel ── */}
+                  <AnimatePresence>
+                    {hasDiff && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 220, opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.22 }}
+                        className="border-t border-white/[0.05] bg-black/30 overflow-hidden"
+                      >
+                        {diffState?.error ? (
+                          <div className="flex items-center gap-2 p-4">
+                            <AlertTriangle size={13} className="text-red-400" />
+                            <span className="text-[11px] text-red-400/80 font-mono">{diffState.error}</span>
+                          </div>
+                        ) : (
+                          <DiffPanel diff={diffState!} isStreaming={diffState!.isStreaming} />
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               )}
             </AnimatePresence>

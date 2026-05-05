@@ -1,0 +1,53 @@
+
+
+## 2. TECH STACK (WAJIB)
+- Next.js 15 (App Router), TypeScript strict
+- Tailwind CSS 4 + custom theme (lihat UI)
+- shadcn/ui (semua komponen dasar)
+- Framer Motion (animasi)
+- Unicorn.Studio (embed WebGL background)
+- Zustand (state management)
+- Web Crypto API (enkripsi kunci OpenRouter)
+- Vercel deployment
+
+## 3. ARSITEKTUR BACKEND
+### Proxy OpenRouter (BYOK)
+- `POST /api/openrouter/chat`
+- Baca header `x-api-key` dari request client, teruskan ke `https://openrouter.ai/api/v1/chat/completions` dengan `Authorization: Bearer {key}`.
+- Dukung streaming (SSE). Gunakan `ReadableStream` untuk meneruskan respons.
+- **Jangan simpan key**.
+
+### Proxy Cloudflare (built-in token)
+- `POST /api/cloudflare/chat`
+- Gunakan environment variable `CLOUDFLARE_API_TOKEN` dan `CLOUDFLARE_ACCOUNT_ID`.
+- Panggil `https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/run/{model}` dengan format body Cloudflare Workers AI (`messages`).
+- Dukung streaming juga.
+
+## 4. ENKRIPSI KUNCI OPENROUTER (CLIENT-SIDE)
+- Simpan di localStorage, enkripsi pakai AES-GCM (Web Crypto API).
+- Kunci enkripsi turunan dari kombinasi unik browser (userAgent + screen). Jangan simpan plain text.
+
+## 5. MODEL OPENROUTER (DINAMIS, BYOK)
+- Setelah pengguna input key, fetch `GET https://openrouter.ai/api/v1/models` (header `Authorization`).
+- Tampilkan **SEMUA model** dari respons.
+- Filter provider (55 provider wajib):
+```
+AI21, AionLabs, AkashML, Alibaba Cloud Int., Amazon Bedrock, Anthropic, Arcee AI, AtlasCloud, Azure, Baidu Qianfan, Baseten, Cerebras, Chutes, Clarifai, Cohere, DeepInfra, DeepSeek, Featherless, Fireworks, Friendli, GMICloud, Google AI Studio, Google Vertex, Groq, Inception, Inceptron, Infermatic, Inflection, io.net, Liquid, Mancer, MiniMax, Mistral, Moonshot AI, Morph, Nebius Token Factory, NextBit, NovitaAI, OpenAI, OpenInference, Parasail, Perplexity, Phala, Reka AI, Relace, SambaNova, SiliconFlow, StepFun, Switchpoint, Together, Venice, Weights & Biases, xAI, Xiaomi, Z.ai
+```
+- Untuk model dengan biaya $0, tampilkan badge "GRATIS". Berikut daftar model gratis (hanya untuk UI badge, akses tetap pakai key):
+```
+google/gemma-2-9b-it:free, google/learnlm-1.5-pro-experimental:free, meta-llama/llama-3.1-8b-instruct:free, meta-llama/llama-3.1-70b-instruct:free, meta-llama/llama-3.2-1b-instruct:free, meta-llama/llama-3.2-3b-instruct:free, mistralai/pixtral-12b:free, mistralai/mistral-7b-instruct:free, qwen/qwen-2-7b-instruct:free, qwen/qwen-2.5-7b-instruct:free, qwen/qwen-2.5-coder-32b-instruct:free, nvidia/llama-3.1-nemotron-70b-instruct:free, microsoft/phi-3-medium-128k-instruct:free, microsoft/phi-3-mini-128k-instruct:free, gryphe/mythomax-l2-13b:free, openrouter/auto:free
+```
+
+## 6. MODEL CLOUDFLARE (SERVER-SIDE FETCH)
+- Fetch dari `GET https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/models?task=text-generation` menggunakan token server.
+- Tampilkan semua model yang dikembalikan.
+- Jika fetch gagal, fallback hardcode 10 model (Llama 3, Mistral, DeepSeek, dll) agar UI tidak kosong.
+
+## 7. UI/UX - PREMIUM UNICORN.STUDIO
+### Tema
+- Warna: `neon-purple` #A855F7, `neon-cyan` #06B6D4, `neon-pink` #EC4899
+- Background base: `bg-[#05050A]`
+- Glassmorphism: `backdrop-blur-2xl bg-white/5 border border-white/10 shadow-2xl`
+- Font: Inter (body), Space Grotesk (heading)
+
