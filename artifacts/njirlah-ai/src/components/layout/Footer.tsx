@@ -3,24 +3,27 @@ import { motion } from "framer-motion";
 function AnimatedHeart() {
   return (
     <motion.span
-      animate={{ scale: [1, 1.3, 1] }}
-      transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
-      className="inline-block text-pink-400"
+      animate={{ scale: [1, 1.25, 1] }}
+      transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
+      className="inline-block text-rose-400"
     >
-      ❤️
+      ♥
     </motion.span>
   );
 }
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-white/10 bg-black/40 backdrop-blur-md py-4 text-center flex-shrink-0">
-      <p className="text-base font-bold text-pink-400 flex items-center justify-center gap-2 font-space-grotesk">
-        Dibuat dengan <AnimatedHeart /> oleh{" "}
-        <span className="underline decoration-purple-400 text-white">Andikaa Saputraa</span>
+    <footer className="flex-shrink-0 border-t border-white/[0.06] py-3 px-6 flex items-center justify-between">
+      <p className="text-[11px] text-white/20 font-mono">
+        NJIRLAH AI &copy; {new Date().getFullYear()}
       </p>
-      <p className="text-xs text-gray-500 mt-1">
-        Membangun masa depan AI yang bebas, tanpa batas, ala kadarnya tapi njir lah keren. &copy; {new Date().getFullYear()}
+      <p className="text-[11px] text-white/25 flex items-center gap-1.5 font-mono">
+        built with <AnimatedHeart /> by{" "}
+        <span className="text-white/45 font-medium">Andikaa Saputraa</span>
+      </p>
+      <p className="text-[11px] text-white/15 font-mono hidden md:block">
+        njir lah keren
       </p>
     </footer>
   );

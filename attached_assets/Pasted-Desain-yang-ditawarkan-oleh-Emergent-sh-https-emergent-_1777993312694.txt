@@ -1,0 +1,29 @@
+Desain yang ditawarkan oleh [Emergent.sh](https://emergent.sh/) dikenal dengan gaya "Dark Minimalism" yang sangat modern, bersih, dan berorientasi pada fungsionalitas pengembang (developer-centric).
+Berikut adalah elemen kunci dan panduan untuk membuat desain website dengan estetika serupa:
+## 1. Palet Warna & Visual
+
+* Mode Gelap (Dark Mode): Gunakan latar belakang hitam pekat atau abu-abu gelap (#000000 atau #0b0b0b) sebagai dasar utama.
+* Aksen Kontras: Gunakan warna aksen minimalis seperti putih murni untuk teks dan satu warna cerah (seperti biru elektrik atau ungu) untuk tombol CTA atau elemen aktif.
+* Gradients & Glow: Tambahkan efek radial gradient halus atau glow di belakang kartu komponen untuk memberikan kedalaman tanpa merusak kesan minimalis.
+
+## 2. Tipografi & Tata Letak
+
+* Sansk-Serif Modern: Gunakan font inter, geist, atau font monospaced untuk memberikan kesan teknis yang canggih.
+* Hierarki Visual Jelas: Judul (Headline) berukuran besar dan tebal (bold), dikelilingi oleh banyak whitespace (jarak antar elemen) agar fokus pengguna tetap pada pesan utama.
+* Grid System: Gunakan tata letak berbasis grid yang kaku namun responsif, seringkali dengan garis pembatas (border) tipis berwarna abu-abu gelap untuk memisahkan bagian-bagian situs.
+
+## 3. Komponen Utama
+
+* Hero Section: Kalimat singkat yang kuat di tengah layar dengan tombol "Get Started" yang menonjol.
+* Bento Grid: Gunakan tata letak "Bento Box" (kotak-kotak dengan ukuran berbeda) untuk menampilkan fitur atau portofolio guna menjaga kerapihan.
+* Interactive Code/Preview: Sertakan panel yang menunjukkan potongan kode atau pratinjau interaktif, karena gaya Emergent sangat menekankan pada aspek "membangun".
+
+## 4. Inspirasi & Alat Terkait
+Jika Anda ingin membangun website dengan gaya ini dengan cepat, Anda bisa mencoba beberapa alat serupa:
+
+* [Bolt.new](https://bolt.new/): Cocok untuk prototipe cepat dengan gaya full-stack modern.
+* v0.dev: Spesialis dalam menghasilkan UI komponen ala [shadcn/ui](https://ui.shadcn.com/) yang sangat identik dengan gaya Emergent.
+* [Framer](https://www.framer.com/): Platform desain yang memiliki banyak template "Dark Minimalist" siap pakai.
+
+Apakah Anda ingin saya membuatkan prompt spesifik untuk menghasilkan website dengan gaya ini di Bolt.new atau alat AI lainnya?
+

@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Send, Square, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowUp, Loader2 } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
 import { useChat } from "@/hooks/useChat";
 
@@ -14,64 +14,87 @@ export function ChatInput() {
     const msg = input.trim();
     if (!msg || isStreaming) return;
     setInput("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
     await sendMessage(msg);
   }, [input, isStreaming, sendMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
   const handleInput = () => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
+    el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
   };
 
+  const hasContent = input.trim().length > 0;
+
   return (
-    <div className="p-4 border-t border-white/10 bg-black/20 backdrop-blur-md">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-end gap-3 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl px-4 py-3 focus-within:border-purple-500/40 focus-within:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: 0.1 }}
+      className="px-4 pb-4 pt-3 border-t border-white/[0.06] bg-black flex-shrink-0"
+    >
+      <div className="max-w-3xl mx-auto">
+        <motion.div
+          animate={{
+            borderColor: hasContent
+              ? "rgba(139,92,246,0.35)"
+              : "rgba(255,255,255,0.07)",
+          }}
+          transition={{ duration: 0.2 }}
+          className="flex items-end gap-3 bg-white/[0.02] border rounded-lg px-4 py-3 focus-within:shadow-[0_0_0_1px_rgba(139,92,246,0.15)] transition-shadow"
+        >
           <textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             onInput={handleInput}
-            placeholder="Ketik pesanmu di sini... (Enter kirim, Shift+Enter baris baru)"
+            placeholder="Message NJIRLAH AI..."
             rows={1}
-            className="flex-1 bg-transparent text-white placeholder-gray-500 resize-none focus:outline-none text-sm leading-relaxed max-h-48 scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent"
+            className="flex-1 bg-transparent text-sm text-white/85 placeholder-white/20 resize-none focus:outline-none leading-relaxed max-h-44 scrollbar-thin scrollbar-thumb-violet scrollbar-track-transparent font-sans"
           />
+
           <motion.button
             onClick={handleSend}
-            disabled={!input.trim() && !isStreaming}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className={`p-2.5 rounded-xl transition-all flex-shrink-0 ${
-              input.trim() && !isStreaming
-                ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]"
-                : isStreaming
-                ? "bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30"
-                : "bg-white/5 text-gray-600 cursor-not-allowed"
-            }`}
+            disabled={!hasContent && !isStreaming}
+            whileHover={hasContent ? { scale: 1.05 } : {}}
+            whileTap={hasContent ? { scale: 0.92 } : {}}
+            animate={{
+              backgroundColor: hasContent
+                ? "rgba(139,92,246,0.85)"
+                : "rgba(255,255,255,0.04)",
+            }}
+            transition={{ duration: 0.2 }}
+            className="p-2 rounded-md flex-shrink-0 transition-all disabled:cursor-not-allowed"
           >
-            {isStreaming ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Send size={16} />
-            )}
+            <AnimatePresence mode="wait">
+              {isStreaming ? (
+                <motion.div key="loading" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
+                  <Loader2 size={14} className="text-white/60 animate-spin" />
+                </motion.div>
+              ) : (
+                <motion.div key="send" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
+                  <ArrowUp size={14} className={hasContent ? "text-white" : "text-white/20"} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.button>
-        </div>
-        <p className="text-center text-xs text-gray-600 mt-2">
-          NJIRLAH AI bisa saja salah. Verifikasi info penting ya.
-        </p>
+        </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="text-[10px] text-white/15 text-center mt-2 font-mono tracking-wide"
+        >
+          Enter ↵ send · Shift+Enter new line · NJIRLAH AI can be wrong
+        </motion.p>
       </div>
-    </div>
+    </motion.div>
   );
 }
