@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { nanoid } from "nanoid";
 
 export type MessageRole = "user" | "assistant" | "system";
@@ -29,6 +30,7 @@ interface ChatStore {
   selectedModel: string;
   selectedProvider: ModelProvider;
   isStreaming: boolean;
+  customInstructions: string;
 
   createChat: () => string;
   setActiveChat: (id: string) => void;
@@ -40,94 +42,112 @@ interface ChatStore {
   setSelectedModel: (model: string, provider: ModelProvider) => void;
   setStreaming: (streaming: boolean) => void;
   getActiveChat: () => Chat | null;
+  setCustomInstructions: (instructions: string) => void;
 }
 
-export const useChatStore = create<ChatStore>((set, get) => ({
-  chats: [],
-  activeChatId: null,
-  selectedModel: "gpt-5.4",
-  selectedProvider: "replit",
-  isStreaming: false,
+export const useChatStore = create<ChatStore>()(
+  persist(
+    (set, get) => ({
+      chats: [],
+      activeChatId: null,
+      selectedModel: "gpt-5.4",
+      selectedProvider: "replit",
+      isStreaming: false,
+      customInstructions: "",
 
-  createChat: () => {
-    const id = nanoid();
-    const { selectedModel, selectedProvider } = get();
-    set((state) => ({
-      chats: [
-        {
-          id,
-          title: "New Chat",
-          messages: [],
-          createdAt: Date.now(),
-          model: selectedModel,
-          provider: selectedProvider,
-        },
-        ...state.chats,
-      ],
-      activeChatId: id,
-    }));
-    return id;
-  },
+      createChat: () => {
+        const id = nanoid();
+        const { selectedModel, selectedProvider } = get();
+        set((state) => ({
+          chats: [
+            {
+              id,
+              title: "New Chat",
+              messages: [],
+              createdAt: Date.now(),
+              model: selectedModel,
+              provider: selectedProvider,
+            },
+            ...state.chats,
+          ],
+          activeChatId: id,
+        }));
+        return id;
+      },
 
-  setActiveChat: (id) => set({ activeChatId: id }),
+      setActiveChat: (id) => set({ activeChatId: id }),
 
-  deleteChat: (id) =>
-    set((state) => {
-      const filtered = state.chats.filter((c) => c.id !== id);
-      const newActive =
-        state.activeChatId === id ? (filtered[0]?.id ?? null) : state.activeChatId;
-      return { chats: filtered, activeChatId: newActive };
+      deleteChat: (id) =>
+        set((state) => {
+          const filtered = state.chats.filter((c) => c.id !== id);
+          const newActive =
+            state.activeChatId === id ? (filtered[0]?.id ?? null) : state.activeChatId;
+          return { chats: filtered, activeChatId: newActive };
+        }),
+
+      addMessage: (chatId, message) => {
+        const id = nanoid();
+        set((state) => ({
+          chats: state.chats.map((c) =>
+            c.id === chatId
+              ? { ...c, messages: [...c.messages, { ...message, id, timestamp: Date.now() }] }
+              : c,
+          ),
+        }));
+        return id;
+      },
+
+      updateMessage: (chatId, messageId, updates) =>
+        set((state) => ({
+          chats: state.chats.map((c) =>
+            c.id === chatId
+              ? {
+                  ...c,
+                  messages: c.messages.map((m) => (m.id === messageId ? { ...m, ...updates } : m)),
+                }
+              : c,
+          ),
+        })),
+
+      appendToMessage: (chatId, messageId, content) =>
+        set((state) => ({
+          chats: state.chats.map((c) =>
+            c.id === chatId
+              ? {
+                  ...c,
+                  messages: c.messages.map((m) =>
+                    m.id === messageId ? { ...m, content: m.content + content } : m,
+                  ),
+                }
+              : c,
+          ),
+        })),
+
+      setTitle: (chatId, title) =>
+        set((state) => ({
+          chats: state.chats.map((c) => (c.id === chatId ? { ...c, title } : c)),
+        })),
+
+      setSelectedModel: (model, provider) => set({ selectedModel: model, selectedProvider: provider }),
+
+      setStreaming: (streaming) => set({ isStreaming: streaming }),
+
+      getActiveChat: () => {
+        const { chats, activeChatId } = get();
+        return chats.find((c) => c.id === activeChatId) ?? null;
+      },
+
+      setCustomInstructions: (instructions) => set({ customInstructions: instructions }),
     }),
-
-  addMessage: (chatId, message) => {
-    const id = nanoid();
-    set((state) => ({
-      chats: state.chats.map((c) =>
-        c.id === chatId
-          ? { ...c, messages: [...c.messages, { ...message, id, timestamp: Date.now() }] }
-          : c,
-      ),
-    }));
-    return id;
-  },
-
-  updateMessage: (chatId, messageId, updates) =>
-    set((state) => ({
-      chats: state.chats.map((c) =>
-        c.id === chatId
-          ? {
-              ...c,
-              messages: c.messages.map((m) => (m.id === messageId ? { ...m, ...updates } : m)),
-            }
-          : c,
-      ),
-    })),
-
-  appendToMessage: (chatId, messageId, content) =>
-    set((state) => ({
-      chats: state.chats.map((c) =>
-        c.id === chatId
-          ? {
-              ...c,
-              messages: c.messages.map((m) =>
-                m.id === messageId ? { ...m, content: m.content + content } : m,
-              ),
-            }
-          : c,
-      ),
-    })),
-
-  setTitle: (chatId, title) =>
-    set((state) => ({
-      chats: state.chats.map((c) => (c.id === chatId ? { ...c, title } : c)),
-    })),
-
-  setSelectedModel: (model, provider) => set({ selectedModel: model, selectedProvider: provider }),
-
-  setStreaming: (streaming) => set({ isStreaming: streaming }),
-
-  getActiveChat: () => {
-    const { chats, activeChatId } = get();
-    return chats.find((c) => c.id === activeChatId) ?? null;
-  },
-}));
+    {
+      name: "njirlah-chat-store",
+      partialize: (state) => ({
+        chats: state.chats,
+        activeChatId: state.activeChatId,
+        selectedModel: state.selectedModel,
+        selectedProvider: state.selectedProvider,
+        customInstructions: state.customInstructions,
+      }),
+    },
+  ),
+);

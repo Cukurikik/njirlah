@@ -36,7 +36,8 @@ export function ChatInput() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.1 }}
-      className="px-4 pb-4 pt-3 border-t border-white/[0.06] bg-black flex-shrink-0"
+      className="px-4 pb-4 pt-3 border-t border-white/[0.06] flex-shrink-0"
+      style={{ background: "#05050A" }}
     >
       <div className="max-w-3xl mx-auto">
         <motion.div

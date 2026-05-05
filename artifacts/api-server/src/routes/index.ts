@@ -3,6 +3,7 @@ import healthRouter from "./health";
 import cloudflareRouter from "./cloudflare";
 import openrouterRouter from "./openrouter";
 import replitRouter from "./replit";
+import statusRouter from "./status";
 
 const router: IRouter = Router();
 
@@ -10,5 +11,6 @@ router.use(healthRouter);
 router.use(cloudflareRouter);
 router.use(openrouterRouter);
 router.use(replitRouter);
+router.use(statusRouter);
 
 export default router;

@@ -9,7 +9,7 @@ import {
   OpenAILogo, CloudflareLogo, MistralLogo, AnthropicLogo,
   LlamaLogo, GoogleGemmaLogo, DeepSeekLogo, XAILogo,
 } from "@/components/ui/AIProviderLogos";
-import { Sparkles } from "lucide-react";
+import { Sparkles, ShieldCheck, Zap, Layers } from "lucide-react";
 
 const BENTO_FEATURES = [
   {
@@ -50,23 +50,35 @@ const BENTO_FEATURES = [
   },
 ];
 
+const VALUE_PROPS = [
+  {
+    icon: <Zap size={12} />,
+    color: "text-green-400",
+    bg: "bg-green-500/[0.06] border-green-500/15",
+    title: "Free GPT-5.4, no key needed",
+    desc: "Start instantly — no signup, no credit card.",
+  },
+  {
+    icon: <ShieldCheck size={12} />,
+    color: "text-violet-400",
+    bg: "bg-violet-500/[0.06] border-violet-500/15",
+    title: "Your keys stay on your device",
+    desc: "AES-GCM encrypted locally. We never see them.",
+  },
+  {
+    icon: <Layers size={12} />,
+    color: "text-cyan-400",
+    bg: "bg-cyan-500/[0.06] border-cyan-500/15",
+    title: "One UI, 200+ models",
+    desc: "Switch Cloudflare ↔ OpenRouter ↔ Built-in instantly.",
+  },
+];
+
 const PROMPTS = [
-  {
-    lang: "html",
-    text: "Build a responsive dashboard with Tailwind CSS and shadcn/ui components",
-  },
-  {
-    lang: "tsx",
-    text: "Create a React TypeScript data table with sorting, filtering, and pagination",
-  },
-  {
-    lang: "py",
-    text: "Write a FastAPI REST backend with JWT auth and PostgreSQL via SQLAlchemy",
-  },
-  {
-    lang: "sql",
-    text: "Design a PostgreSQL schema for a SaaS app with multi-tenancy and RLS",
-  },
+  { lang: "html", text: "Build a responsive dashboard with Tailwind CSS and shadcn/ui components" },
+  { lang: "tsx",  text: "Create a React TypeScript data table with sorting, filtering, and pagination" },
+  { lang: "py",   text: "Write a FastAPI REST backend with JWT auth and PostgreSQL via SQLAlchemy" },
+  { lang: "sql",  text: "Design a PostgreSQL schema for a SaaS app with multi-tenancy and RLS" },
 ];
 
 const LANG_COLORS: Record<string, string> = {
@@ -74,7 +86,6 @@ const LANG_COLORS: Record<string, string> = {
   tsx:  "text-cyan-400/70 border-cyan-500/15 bg-cyan-500/[0.04]",
   py:   "text-green-400/70 border-green-500/15 bg-green-500/[0.04]",
   sql:  "text-sky-400/70 border-sky-500/15 bg-sky-500/[0.04]",
-  js:   "text-yellow-400/70 border-yellow-500/15 bg-yellow-500/[0.04]",
 };
 
 const container = {
@@ -108,7 +119,7 @@ export function ChatArea() {
           className="w-full max-w-2xl"
         >
           {/* Hero */}
-          <motion.div variants={item} className="text-center mb-8">
+          <motion.div variants={item} className="text-center mb-6">
             <motion.div
               initial={{ scale: 0.7, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -118,6 +129,20 @@ export function ChatArea() {
               <AILogo size={40} animated />
             </motion.div>
             <HeroBrandText />
+          </motion.div>
+
+          {/* Value proposition — why NJIRLAH vs ChatGPT/Claude */}
+          <motion.div variants={item} className="grid grid-cols-3 gap-2 mb-5">
+            {VALUE_PROPS.map((v) => (
+              <div
+                key={v.title}
+                className={`flex flex-col gap-1.5 p-3 rounded-lg border ${v.bg} cursor-default`}
+              >
+                <span className={`${v.color} flex-shrink-0`}>{v.icon}</span>
+                <p className="text-[11px] font-semibold text-white/70 leading-tight">{v.title}</p>
+                <p className="text-[10px] text-white/30 leading-relaxed">{v.desc}</p>
+              </div>
+            ))}
           </motion.div>
 
           {/* Provider bento grid */}

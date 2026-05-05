@@ -11,6 +11,7 @@ import { ChatArea } from "@/components/chat/ChatArea";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ApiKeyModal } from "@/components/chat/ApiKeyModal";
 import { ExportModal } from "@/components/chat/ExportModal";
+import { CustomInstructionsModal } from "@/components/chat/CustomInstructionsModal";
 import { DevPanel } from "@/components/dev/DevPanel";
 
 const queryClient = new QueryClient({
@@ -26,6 +27,8 @@ function AppInner() {
   const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [devPanelOpen, setDevPanelOpen] = useState(false);
+  const [customInstructionsOpen, setCustomInstructionsOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { loadKey } = useApiKeyStore();
   const { chats, createChat } = useChatStore();
 
@@ -46,12 +49,16 @@ function AppInner() {
         <Sidebar
           onOpenApiKey={() => setApiKeyModalOpen(true)}
           onExport={() => setExportModalOpen(true)}
+          onOpenCustomInstructions={() => setCustomInstructionsOpen(true)}
+          mobileOpen={mobileSidebarOpen}
+          onMobileClose={() => setMobileSidebarOpen(false)}
         />
 
         <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
           <Header
             onToggleDevPanel={() => setDevPanelOpen(!devPanelOpen)}
             devPanelOpen={devPanelOpen}
+            onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           />
           <div className="flex flex-1 min-h-0 overflow-hidden">
             <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
@@ -66,6 +73,7 @@ function AppInner() {
 
       <ApiKeyModal open={apiKeyModalOpen} onClose={() => setApiKeyModalOpen(false)} />
       <ExportModal open={exportModalOpen} onClose={() => setExportModalOpen(false)} />
+      <CustomInstructionsModal open={customInstructionsOpen} onClose={() => setCustomInstructionsOpen(false)} />
     </motion.div>
   );
 }

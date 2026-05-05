@@ -1,0 +1,28 @@
+Berdasarkan tampilan dan fungsionalitas yang terlihat pada [NJIRLAH AI](https://d6b5618c-2e6c-49bd-b2bd-dfc7a60058b2-00-frc5wmnaau3q.sisko.replit.dev/), secara visual website ini sudah terlihat sangat modern dan "tech-savvy" dengan tema dark mode dan aksen ungu. Namun, jika dilihat dari sudut pandang **User Experience (UX)** dan **Kesiapan Produk**, berikut adalah beberapa hal yang bisa ditingkatkan:
+
+---
+
+### 1. Kejelasan Identitas & Branding
+* **Nama "NJIRLAH":** Meskipun unik dan sangat "anak muda" (Indonesian slang), nama ini mungkin terasa kurang profesional jika target pasarnya adalah korporat atau penggunaan formal.
+* **Value Proposition:** Belum ada penjelasan singkat di halaman depan mengenai *mengapa* user harus menggunakan ini dibanding ChatGPT atau Claude langsung. Apa keunggulan utamanya?
+
+### 2. Fitur Navigasi & Organisasi Chat
+* **Folder Chat:** Jika user memiliki banyak percakapan, hanya mengandalkan list di sidebar kiri akan membuat berantakan. Penambahan fitur "Folder" akan sangat membantu.
+* **Search Bar di Sidebar:** Belum terlihat fitur untuk mencari riwayat chat lama berdasarkan kata kunci.
+
+### 3. Aspek Teknis & Personalisasi
+* **Custom Instructions:** Belum terlihat opsi bagi user untuk mengatur "System Prompt" mereka sendiri agar AI berperilaku sesuai keinginan secara permanen.
+* **Pilihan Model yang Lebih Luas:** Meskipun sudah ada OpenRouter, pengelompokan model berdasarkan kegunaan (misal: "Best for Coding", "Best for Writing") akan memudahkan user awam.
+
+### 4. Transparansi & Keamanan
+* **Kebijakan Privasi:** Sebagai platform yang memproses data teks, sangat penting untuk mencantumkan bagaimana data user disimpan atau apakah data tersebut digunakan untuk training ulang.
+* **Status API:** Menambahkan indikator latensi atau status server untuk setiap provider (Cloudflare, OpenRouter) agar user tahu jika ada layanan yang sedang down.
+
+### 5. Mobile Optimization
+* Dilihat dari screenshot, layout ini sangat optimal untuk desktop. Perlu dipastikan apakah pada tampilan mobile (HP), sidebar tersebut bisa tersembunyi dengan baik (hamburger menu) dan area chat tetap lega.
+
+---
+
+> **Catatan Kecil:** Tulisan "GPT-5.4" di header mungkin bisa dianggap menyesatkan oleh user yang tahu perkembangan AI (karena secara teknis belum ada versi tersebut secara resmi dari OpenAI). Jika itu adalah penamaan internal, mungkin perlu diberi keterangan tambahan.
+
+Secara keseluruhan, buatan **Andikaa Saputraa** ini sudah sangat "keren" untuk sebuah project development preview! Apakah kamu berniat menjadikan website ini sebagai platform publik atau hanya untuk portofolio pribadi?

@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { useChatStore } from "@/store/chat-store";
 import { useApiKeyStore } from "@/store/api-key-store";
 
-const SYSTEM_PROMPT = `You are NJIRLAH AI, an expert full-stack developer and UI/UX engineer.
+const BASE_SYSTEM_PROMPT = `You are NJIRLAH AI, an expert full-stack developer and UI/UX engineer.
 
 When generating UI, web pages, or components:
 - Always use Tailwind CSS for styling. For standalone HTML previews include <script src="https://cdn.tailwindcss.com"></script> in <head>.
@@ -15,9 +15,13 @@ When generating UI, web pages, or components:
 
 type ApiMessage = { role: "user" | "assistant" | "system"; content: string };
 
-function buildApiMessages(chatMessages: ApiMessage[], userContent: string): ApiMessage[] {
+function buildApiMessages(chatMessages: ApiMessage[], userContent: string, customInstructions?: string): ApiMessage[] {
+  const systemContent = customInstructions?.trim()
+    ? `${BASE_SYSTEM_PROMPT}\n\n## Custom Instructions\n${customInstructions.trim()}`
+    : BASE_SYSTEM_PROMPT;
+
   return [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: systemContent },
     ...chatMessages,
     { role: "user", content: userContent },
   ];
@@ -85,6 +89,7 @@ export function useChat() {
     selectedModel,
     selectedProvider,
     getActiveChat,
+    customInstructions,
   } = useChatStore();
   const { openRouterKey } = useApiKeyStore();
 
@@ -113,7 +118,7 @@ export function useChat() {
         role: role as "user" | "assistant" | "system",
         content: c,
       }));
-      const apiMessages = buildApiMessages(priorMessages, content);
+      const apiMessages = buildApiMessages(priorMessages, content, customInstructions);
 
       try {
         let response: Response;
@@ -122,35 +127,20 @@ export function useChat() {
           response = await fetch(`/api/replit/chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: selectedModel,
-              messages: apiMessages,
-              stream: true,
-            }),
+            body: JSON.stringify({ model: selectedModel, messages: apiMessages, stream: true }),
           });
         } else if (selectedProvider === "cloudflare") {
           response = await fetch(`/api/cloudflare/chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: selectedModel,
-              messages: apiMessages,
-              stream: true,
-            }),
+            body: JSON.stringify({ model: selectedModel, messages: apiMessages, stream: true }),
           });
         } else {
           if (!openRouterKey) throw new Error("OpenRouter API key required");
           response = await fetch(`/api/openrouter/chat`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-api-key": openRouterKey,
-            },
-            body: JSON.stringify({
-              model: selectedModel,
-              messages: apiMessages,
-              stream: true,
-            }),
+            headers: { "Content-Type": "application/json", "x-api-key": openRouterKey },
+            body: JSON.stringify({ model: selectedModel, messages: apiMessages, stream: true }),
           });
         }
 
@@ -163,17 +153,11 @@ export function useChat() {
           appendToMessage(chatId!, assistantMsgId, chunk);
         });
 
-        updateMessage(chatId!, assistantMsgId, {
-          isStreaming: false,
-          content: fullContent,
-        });
+        updateMessage(chatId!, assistantMsgId, { isStreaming: false, content: fullContent });
 
         if (chat.messages.length === 0 && fullContent) {
           const titleWords = content.split(" ").slice(0, 6).join(" ");
-          setTitle(
-            chatId!,
-            titleWords + (content.split(" ").length > 6 ? "…" : ""),
-          );
+          setTitle(chatId!, titleWords + (content.split(" ").length > 6 ? "…" : ""));
         }
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : "An error occurred";
@@ -185,18 +169,8 @@ export function useChat() {
         setStreaming(false);
       }
     },
-    [
-      activeChatId,
-      selectedModel,
-      selectedProvider,
-      openRouterKey,
-      addMessage,
-      updateMessage,
-      appendToMessage,
-      setTitle,
-      createChat,
-      setStreaming,
-    ],
+    [activeChatId, selectedModel, selectedProvider, openRouterKey, customInstructions,
+     addMessage, updateMessage, appendToMessage, setTitle, createChat, setStreaming],
   );
 
   const regenerate = useCallback(async () => {
@@ -210,18 +184,18 @@ export function useChat() {
     const lastUser = messages[messages.length - 2];
     if (!lastUser || lastUser.role !== "user") return;
 
-    useChatStore
-      .getState()
-      .updateMessage(chat.id, lastAssistant.id, { content: "", isStreaming: true });
+    useChatStore.getState().updateMessage(chat.id, lastAssistant.id, { content: "", isStreaming: true });
     setStreaming(true);
 
-    const priorMessages = messages
-      .slice(0, -2)
-      .map(({ role, content }) => ({
-        role: role as "user" | "assistant" | "system",
-        content,
-      }));
-    const apiMessages = buildApiMessages(priorMessages, lastUser.content);
+    const priorMessages = messages.slice(0, -2).map(({ role, content }) => ({
+      role: role as "user" | "assistant" | "system",
+      content,
+    }));
+    const apiMessages = buildApiMessages(
+      priorMessages,
+      lastUser.content,
+      useChatStore.getState().customInstructions,
+    );
 
     try {
       let response: Response;
@@ -230,32 +204,20 @@ export function useChat() {
         response = await fetch(`/api/replit/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: selectedModel,
-            messages: apiMessages,
-            stream: true,
-          }),
+          body: JSON.stringify({ model: selectedModel, messages: apiMessages, stream: true }),
         });
       } else if (selectedProvider === "cloudflare") {
         response = await fetch(`/api/cloudflare/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: selectedModel,
-            messages: apiMessages,
-            stream: true,
-          }),
+          body: JSON.stringify({ model: selectedModel, messages: apiMessages, stream: true }),
         });
       } else {
         if (!openRouterKey) throw new Error("OpenRouter API key required");
         response = await fetch(`/api/openrouter/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-api-key": openRouterKey },
-          body: JSON.stringify({
-            model: selectedModel,
-            messages: apiMessages,
-            stream: true,
-          }),
+          body: JSON.stringify({ model: selectedModel, messages: apiMessages, stream: true }),
         });
       }
 
@@ -265,20 +227,16 @@ export function useChat() {
         useChatStore.getState().appendToMessage(chat.id, lastAssistant.id, chunk);
       });
 
-      useChatStore
-        .getState()
-        .updateMessage(chat.id, lastAssistant.id, {
-          content: fullContent,
-          isStreaming: false,
-        });
+      useChatStore.getState().updateMessage(chat.id, lastAssistant.id, {
+        content: fullContent,
+        isStreaming: false,
+      });
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "An error occurred";
-      useChatStore
-        .getState()
-        .updateMessage(chat.id, lastAssistant.id, {
-          content: `❌ **Error:** ${errorMsg}`,
-          isStreaming: false,
-        });
+      useChatStore.getState().updateMessage(chat.id, lastAssistant.id, {
+        content: `❌ **Error:** ${errorMsg}`,
+        isStreaming: false,
+      });
     } finally {
       setStreaming(false);
     }
