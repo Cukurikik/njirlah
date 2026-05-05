@@ -30,7 +30,8 @@ export function Sidebar({ onOpenApiKey, onExport }: SidebarProps) {
     <motion.aside
       animate={{ width: collapsed ? 52 : 252 }}
       transition={{ type: "spring", stiffness: 280, damping: 28, mass: 0.8 }}
-      className="relative flex flex-col h-full bg-black border-r border-white/[0.06] overflow-hidden flex-shrink-0"
+      className="relative flex flex-col h-full border-r border-white/[0.06] overflow-hidden flex-shrink-0"
+        style={{ background: "#05050A" }}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-3 border-b border-white/[0.06] h-12">

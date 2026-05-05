@@ -136,7 +136,8 @@ export function ModelSelector() {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="absolute top-full left-0 mt-1.5 w-[460px] max-h-[520px] flex flex-col bg-black border border-white/[0.08] rounded-lg shadow-2xl z-50 overflow-hidden"
+              className="absolute top-full left-0 mt-1.5 w-[460px] max-h-[520px] flex flex-col border border-white/[0.08] rounded-lg shadow-2xl z-50 overflow-hidden"
+              style={{ background: "#05050A" }}
             >
               {/* Search + tabs */}
               <div className="p-3 border-b border-white/[0.06] space-y-2">
@@ -201,7 +202,7 @@ export function ModelSelector() {
                 {/* ── NJIRLAH AI Built-in section ── */}
                 {(activeTab === "all" || activeTab === "replit") && filteredReplit.length > 0 && (
                   <div>
-                    <div className="sticky top-0 flex items-center gap-1.5 px-3 py-2 bg-black border-b border-white/[0.04] z-10">
+                    <div className="sticky top-0 flex items-center gap-1.5 px-3 py-2 border-b border-white/[0.04] z-10" style={{ background: "#05050A" }}>
                       <Sparkles size={10} className="text-violet-400/60" />
                       <span className="text-[10px] font-semibold text-violet-400/60 tracking-widest uppercase font-mono">NJIRLAH AI Built-in</span>
                       <span className="ml-auto text-[10px] text-green-400/60 font-mono">no key required · free</span>
@@ -236,7 +237,7 @@ export function ModelSelector() {
                 {/* ── Cloudflare section ── */}
                 {(activeTab === "all" || activeTab === "cloudflare") && filteredCf.length > 0 && (
                   <div>
-                    <div className="sticky top-0 flex items-center gap-1.5 px-3 py-2 bg-black border-b border-white/[0.04] z-10">
+                    <div className="sticky top-0 flex items-center gap-1.5 px-3 py-2 border-b border-white/[0.04] z-10" style={{ background: "#05050A" }}>
                       <Cloud size={10} className="text-orange-400/60" />
                       <span className="text-[10px] font-semibold text-orange-400/60 tracking-widest uppercase font-mono">Cloudflare Workers AI</span>
                       <span className="ml-auto text-[10px] text-white/20 font-mono">built-in · free</span>
@@ -271,7 +272,7 @@ export function ModelSelector() {
                 {/* ── OpenRouter section ── */}
                 {(activeTab === "all" || activeTab === "openrouter") && (
                   <div>
-                    <div className="sticky top-0 flex items-center gap-1.5 px-3 py-2 bg-black border-b border-white/[0.04] z-10">
+                    <div className="sticky top-0 flex items-center gap-1.5 px-3 py-2 border-b border-white/[0.04] z-10" style={{ background: "#05050A" }}>
                       <Zap size={10} className="text-amber-400/60" />
                       <span className="text-[10px] font-semibold text-amber-400/60 tracking-widest uppercase font-mono">OpenRouter</span>
                       {!hasKey && (

@@ -19,7 +19,8 @@ export function Header({ onToggleDevPanel, devPanelOpen }: HeaderProps) {
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" as const }}
-      className="flex items-center gap-3 px-4 h-12 border-b border-white/[0.06] bg-black flex-shrink-0"
+      className="flex items-center gap-3 px-4 h-12 border-b border-white/[0.06] flex-shrink-0"
+      style={{ background: "#05050A" }}
     >
       {/* Logo */}
       <motion.div

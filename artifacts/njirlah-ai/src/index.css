@@ -158,10 +158,14 @@
   }
 
   body {
-    background: #000000;
+    background: #05050A;
     color: hsl(var(--foreground));
     font-family: var(--app-font-sans);
     letter-spacing: var(--tracking-normal);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
   }
 }
 

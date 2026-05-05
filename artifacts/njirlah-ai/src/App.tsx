@@ -37,7 +37,8 @@ function AppInner() {
       variants={pageVariants}
       initial="hidden"
       animate="visible"
-      className="relative flex h-screen w-screen overflow-hidden bg-black"
+      className="relative flex h-screen w-screen overflow-hidden"
+      style={{ background: "#05050A" }}
     >
       <Background />
 
