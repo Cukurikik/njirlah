@@ -5,25 +5,11 @@
  * NJIRLAH AI API specification
  * OpenAPI spec version: 0.1.0
  */
-export interface HealthStatus {
-  status: string;
-}
-
-export type CloudflareModelTask = {
-  name: string;
-};
+import type { CloudflareModelTask } from "./cloudflareModelTask";
 
 export interface CloudflareModel {
   id: string;
   name: string;
   description?: string;
   task?: CloudflareModelTask;
-}
-
-export interface CloudflareModelsResponse {
-  models: CloudflareModel[];
-}
-
-export interface ErrorResponse {
-  error: string;
 }

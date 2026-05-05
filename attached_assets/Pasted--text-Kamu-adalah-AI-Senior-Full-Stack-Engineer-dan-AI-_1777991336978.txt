@@ -1,0 +1,149 @@
+
+---
+```text
+Kamu adalah AI Senior Full‑Stack Engineer dan AI Integration Architect. Tugasmu membangun aplikasi web **NJIRLAH AI** secara utuh, production‑ready, dengan **ZERO TOLERANSI** terhadap penyimpangan spesifikasi di bawah ini.
+
+---
+
+## 🌐 1. NJIRLAH AI – DESKRIPSI UTAMA
+NJIRLAH AI adalah platform chat multi‑model AI yang **WAJIB BYOK untuk OpenRouter**, dan **built‑in Cloudflare Workers AI** (token disediakan server).  
+Dua sumber model:
+1. **OpenRouter** → Pengguna **harus memasukkan API key miliknya sendiri** (bisa yang gratis). Tanpa key, tidak ada akses OpenRouter.
+2. **Cloudflare Workers AI** → Menggunakan token API **milik NJIRLAH AI** (environment variable server), sehingga pengguna bisa langsung chatting dengan model Cloudflare tanpa memberikan kunci tambahan.
+
+Branding: edgy, playful, premium – glassmorphism Tailwind + WebGL Unicorn.Studio + neon purple/cyan/pink.  
+Nama: **NJIRLAH AI**. Tagline: “Chat AI Tersesat, Bebas Pake Kunci Sendiri”.
+
+---
+
+## ⚙️ 2. TECH STACK (WAJIB)
+- **Next.js 15** (App Router) + TypeScript strict mode
+- **Tailwind CSS 4** dengan custom theme
+- **shadcn/ui** untuk komponen dasar (dialog, dropdown, input, toast, dsb.)
+- **Framer Motion** untuk animasi
+- **Unicorn.Studio** (embed WebGL scene wajib di background penuh)
+- **Zustand** untuk state management
+- **Web Crypto API** untuk enkripsi kunci OpenRouter di sisi klien
+- **Vercel** deployment
+
+---
+
+## 🔐 3. ARSITEKTUR & KEAMANAN
+- OpenRouter API key **hanya disimpan di localStorage**, dienkripsi AES‑GCM (Web Crypto API) dengan passphrase turunan karakteristik browser.
+- **Tidak ada API key OpenRouter di server**.
+- Cloudflare token disimpan di environment variable `CLOUDFLARE_API_TOKEN` dan `CLOUDFLARE_ACCOUNT_ID` di server. **Tidak dikirim ke klien**.
+
+### Proxy API routes:
+- `POST /api/openrouter/chat`  
+  → Membaca header `x-api-key` dari request klien, meneruskan `Authorization: Bearer {key}` ke `https://openrouter.ai/api/v1/chat/completions`. **Tidak menyimpan key**.
+- `POST /api/cloudflare/chat`  
+  → Menggunakan token server, meneruskan request ke `https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/run/@cf/model`.  
+  → Body request mengikuti format Cloudflare Workers AI (messages).
+
+Kedua endpoint wajib mendukung **streaming (SSE)** dengan `ReadableStream`.
+
+---
+
+## 🔑 4. MODE AKSES OPENROUTER (BYOK STRICT)
+- **Tanpa OpenRouter API key**, panel OpenRouter tidak bisa digunakan. Tampilkan dialog input key.
+- Saat pengguna memasukkan key, simpan terenkripsi di localStorage.
+- Fetch model **dinamis** dari `GET https://openrouter.ai/api/v1/models` dengan key pengguna.
+  - **Seluruh model yang dikembalikan harus tersedia**, tidak dibatasi.
+- Provider yang didukung **(55 provider) wajib tersedia sebagai filter** di ModelSelector:
+
+```
+AI21, AionLabs, AkashML, Alibaba Cloud Int., Amazon Bedrock, Anthropic, Arcee AI, AtlasCloud, Azure, Baidu Qianfan, Baseten, Cerebras, Chutes, Clarifai, Cohere, DeepInfra, DeepSeek, Featherless, Fireworks, Friendli, GMICloud, Google AI Studio, Google Vertex, Groq, Inception, Inceptron, Infermatic, Inflection, io.net, Liquid, Mancer, MiniMax, Mistral, Moonshot AI, Morph, Nebius Token Factory, NextBit, NovitaAI, OpenAI, OpenInference, Parasail, Perplexity, Phala, Reka AI, Relace, SambaNova, SiliconFlow, StepFun, Switchpoint, Together, Venice, Weights & Biases, xAI, Xiaomi, Z.ai
+```
+
+- Model gratis OpenRouter (daftar di bawah) **hanya bisa diakses jika pengguna memiliki key yang valid**. Key gratis OpenRouter sudah mencakup akses ke model‑model ini.
+- ModelSelector wajib menampilkan badge “GRATIS” untuk model dengan biaya $0, dan harga untuk yang berbayar.
+
+**Daftar model gratis (referensi, untuk badge UI):**
+```
+google/gemma-2-9b-it:free
+google/learnlm-1.5-pro-experimental:free
+meta-llama/llama-3.1-8b-instruct:free
+meta-llama/llama-3.1-70b-instruct:free
+meta-llama/llama-3.2-1b-instruct:free
+meta-llama/llama-3.2-3b-instruct:free
+mistralai/pixtral-12b:free
+mistralai/mistral-7b-instruct:free
+qwen/qwen-2-7b-instruct:free
+qwen/qwen-2.5-7b-instruct:free
+qwen/qwen-2.5-coder-32b-instruct:free
+nvidia/llama-3.1-nemotron-70b-instruct:free
+microsoft/phi-3-medium-128k-instruct:free
+microsoft/phi-3-mini-128k-instruct:free
+gryphe/mythomax-l2-13b:free
+openrouter/auto:free
+```
+
+---
+
+## ☁️ 5. CLOUDFLARE WORKERS AI (BUILT‑IN, BUKAN BYOK)
+- Token Cloudflare disimpan di server (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`).
+- Model Cloudflare **selalu tersedia** tanpa syarat.
+- Fetch daftar model text‑generation dari  
+  `GET https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/models?task=text-generation`  
+  (gunakan token server di server side, jangan expose ke klien).
+- Model Cloudflare ditampilkan di ModelSelector dengan ikon “CF”.
+- Endpoint proxy `/api/cloudflare/chat` menangani request sesuai format Cloudflare AI.
+
+---
+
+## 🎨 6. UI/UX – PREMIUM UNICORN.STUDIO STYLE
+### Tema Global
+- Warna: `neon-purple` (#A855F7), `neon-cyan` (#06B6D4), `neon-pink` (#EC4899)
+- Background base: `bg-[#05050A]`
+- Glassmorphism: `backdrop-blur-2xl bg-white/5 border border-white/10 shadow-2xl`
+- Tipografi: **Inter** (body), **Space Grotesk** (heading, branding)
+
+### Layout Wajib
+- **Background WebGL**: Embed Unicorn.Studio scene (sci‑fi unicorn, partikel neon) full‑screen fixed, z‑index 0, dengan overlay `bg-black/70 backdrop-blur-sm` agar konten terbaca.
+- **Sidebar kiri** (glass, bisa collapse): Riwayat chat, tombol “New Chat”, input API key OpenRouter.
+- **Panel utama**: Header (model terpilih, badge provider, status streaming), chat area, input box.
+- **Footer** (lihat bagian 8).
+
+### Komponen Premium
+1. **ApiKeyModal / Settings**: Dialog glass untuk memasukkan OpenRouter key, dengan tombol “Test Connection”. Jika key belum ada, panel OpenRouter di sidebar menunjukkan status “🔑 Masukkan API Key”.
+2. **ModelSelector**: Combo box shadcn dengan pencarian, filter multi‑provider, grup “Cloudflare” dan “OpenRouter”, avatar provider, label harga/GRATIS. Harus menampilkan seluruh model dari fetch.
+3. **ChatBubble**: Animasi slide+fade, avatar AI unicorn, tombol copy, regenerate, like/dislike, token usage.
+4. **TypingIndicator**: Tiga titik neon melompat.
+5. **Unicorn Easter Egg**: Klik logo NJIRLAH AI 3x → animasi unicorn menari dengan Framer Motion.
+
+### Mikrointeraksi
+- Tombol glowing hover (`shadow-[0_0_20px]`).
+- Scrollbar kustom nano (ungu).
+- Responsif penuh.
+
+---
+
+## 👤 7. FOOTER – DIBUAT DENGAN SEPENUH HATI OLEH ANDIKAA SAPUTRAA
+Footer wajib muncul di setiap halaman, di dalam layout utama, dengan styling:
+
+```tsx
+<footer className="mt-auto border-t border-white/10 bg-black/40 backdrop-blur-md py-6 text-center">
+  <p className="text-lg font-bold text-neon-pink flex items-center justify-center gap-2">
+    Dibuat dengan <AnimatedHeart /> oleh <span className="underline decoration-neon-purple">Andikaa Saputraa</span>
+  </p>
+  <p className="text-sm text-gray-400 mt-1">
+    Membangun masa depan AI yang bebas, tanpa batas, ala kadarnya tapi njir lah keren.
+  </p>
+</footer>
+```
+- Hati berdetak: animasi CSS scale infinite.
+- Tampilkan tahun dinamis.
+
+---
+
+## 📦 8. STRUKTUR PROYEK (WAJIB LENGKAP)
+- `app/layout.tsx`, `app/page.tsx`
+- `components/chat/`, `components/ui/`, `components/layout/`
+- `lib/encryption.ts`, `lib/openrouter.ts`, `lib/cloudflare.ts`
+- `store/chat-store.ts`, `store/api-key-store.ts`
+- `app/api/openrouter/chat/route.ts`
+- `app/api/cloudflare/chat/route.ts`
+- `tailwind.config.ts`, `next.config.ts`, `.env.example`
+
+---
+
