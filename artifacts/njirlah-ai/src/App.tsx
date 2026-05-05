@@ -1,42 +1,61 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
+import { useApiKeyStore } from "@/store/api-key-store";
+import { useChatStore } from "@/store/chat-store";
+import { NeonBackground } from "@/components/layout/NeonBackground";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { ChatArea } from "@/components/chat/ChatArea";
+import { ChatInput } from "@/components/chat/ChatInput";
+import { ApiKeyModal } from "@/components/chat/ApiKeyModal";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: 1, staleTime: 1000 * 60 * 5 },
+  },
+});
 
-function Home() {
+function AppInner() {
+  const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
+  const { loadKey, hasKey } = useApiKeyStore();
+  const { createChat, chats } = useChatStore();
+
+  useEffect(() => {
+    loadKey();
+  }, [loadKey]);
+
+  useEffect(() => {
+    if (chats.length === 0) {
+      createChat();
+    }
+  }, []);
+
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Replit Agent is building...</h1>
-        <p className="mt-2 text-sm text-gray-600">Your app will appear here once it's ready.</p>
+    <div className="relative flex h-screen w-screen overflow-hidden">
+      <NeonBackground />
+      <div className="absolute inset-0 bg-black/60 z-0 pointer-events-none" />
+
+      <div className="relative z-10 flex w-full h-full">
+        <Sidebar onOpenApiKey={() => setApiKeyModalOpen(true)} />
+
+        <div className="flex flex-col flex-1 min-w-0 h-full">
+          <Header onOpenApiKey={() => setApiKeyModalOpen(true)} />
+          <ChatArea />
+          <ChatInput />
+          <Footer />
+        </div>
       </div>
+
+      <ApiKeyModal open={apiKeyModalOpen} onClose={() => setApiKeyModalOpen(false)} />
     </div>
   );
 }
 
-function Router() {
-  return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
-
-function App() {
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
+      <AppInner />
     </QueryClientProvider>
   );
 }
-
-export default App;
