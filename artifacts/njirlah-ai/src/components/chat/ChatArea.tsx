@@ -1,31 +1,81 @@
 import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChatStore } from "@/store/chat-store";
+import { useChat } from "@/hooks/useChat";
 import { ChatBubble, TypingIndicator } from "./ChatBubble";
 import { HeroBrandText } from "@/components/ui/TypewriterText";
 import { AILogo } from "@/components/ui/AILogo";
-import { Cpu, Zap, Lock, Code2, Sparkles } from "lucide-react";
+import {
+  OpenAILogo, CloudflareLogo, MistralLogo, AnthropicLogo,
+  LlamaLogo, GoogleGemmaLogo, DeepSeekLogo, XAILogo,
+} from "@/components/ui/AIProviderLogos";
+import { Sparkles } from "lucide-react";
 
 const BENTO_FEATURES = [
-  { icon: <Cpu size={13} />, title: "Cloudflare Workers AI", desc: "12+ built-in models, no setup", badge: "FREE", color: "violet" },
-  { icon: <Zap size={13} />, title: "OpenRouter BYOK", desc: "200+ models with your API key", badge: "BYOK", color: "orange" },
-  { icon: <Lock size={13} />, title: "AES-GCM Encrypted", desc: "Key never leaves your browser", badge: "SECURE", color: "green" },
-  { icon: <Code2 size={13} />, title: "Syntax Highlighting", desc: "20+ languages with live preview", badge: "DEV", color: "blue" },
+  {
+    logo: <OpenAILogo size={18} />,
+    logoColor: "text-white",
+    title: "NJIRLAH AI Built-in",
+    desc: "GPT-5.4 streaming, no API key required",
+    badge: "FREE",
+    badgeColor: "text-green-400/80 border-green-500/20 bg-green-500/[0.05]",
+    bg: "hover:border-green-500/20",
+  },
+  {
+    logo: <CloudflareLogo size={18} />,
+    logoColor: "text-orange-400",
+    title: "Cloudflare Workers AI",
+    desc: "12+ open-source models on global edge",
+    badge: "FREE",
+    badgeColor: "text-orange-400/80 border-orange-500/20 bg-orange-500/[0.05]",
+    bg: "hover:border-orange-500/20",
+  },
+  {
+    logo: <span className="flex items-center gap-0.5"><AnthropicLogo size={14} /><MistralLogo size={14} /><LlamaLogo size={14} /></span>,
+    logoColor: "text-violet-400",
+    title: "OpenRouter BYOK",
+    desc: "200+ models — Claude, Mistral, Llama & more",
+    badge: "BYOK",
+    badgeColor: "text-violet-400/80 border-violet-500/20 bg-violet-500/[0.05]",
+    bg: "hover:border-violet-500/20",
+  },
+  {
+    logo: <span className="flex items-center gap-0.5"><GoogleGemmaLogo size={14} /><DeepSeekLogo size={14} /><XAILogo size={14} /></span>,
+    logoColor: "text-blue-400",
+    title: "Live Code Preview",
+    desc: "Tailwind + shadcn/ui, element selection",
+    badge: "DEV",
+    badgeColor: "text-blue-400/80 border-blue-500/20 bg-blue-500/[0.05]",
+    bg: "hover:border-blue-500/20",
+  },
 ];
-
-const BADGE_COLORS: Record<string, string> = {
-  violet: "text-violet-400/70 border-violet-500/20 bg-violet-500/[0.05]",
-  orange: "text-orange-400/70 border-orange-500/20 bg-orange-500/[0.05]",
-  green: "text-green-400/70 border-green-500/20 bg-green-500/[0.05]",
-  blue: "text-blue-400/70 border-blue-500/20 bg-blue-500/[0.05]",
-};
 
 const PROMPTS = [
-  { lang: "py", text: "Tulis REST API dengan FastAPI dan PostgreSQL" },
-  { lang: "js", text: "Buat komponen React dengan TypeScript dan Tailwind" },
-  { lang: "html", text: "Buat landing page modern dengan animasi CSS" },
-  { lang: "sql", text: "Optimasi query SQL dengan indexing strategy" },
+  {
+    lang: "html",
+    text: "Build a responsive dashboard with Tailwind CSS and shadcn/ui components",
+  },
+  {
+    lang: "tsx",
+    text: "Create a React TypeScript data table with sorting, filtering, and pagination",
+  },
+  {
+    lang: "py",
+    text: "Write a FastAPI REST backend with JWT auth and PostgreSQL via SQLAlchemy",
+  },
+  {
+    lang: "sql",
+    text: "Design a PostgreSQL schema for a SaaS app with multi-tenancy and RLS",
+  },
 ];
+
+const LANG_COLORS: Record<string, string> = {
+  html: "text-rose-400/70 border-rose-500/15 bg-rose-500/[0.04]",
+  tsx:  "text-cyan-400/70 border-cyan-500/15 bg-cyan-500/[0.04]",
+  py:   "text-green-400/70 border-green-500/15 bg-green-500/[0.04]",
+  sql:  "text-sky-400/70 border-sky-500/15 bg-sky-500/[0.04]",
+  js:   "text-yellow-400/70 border-yellow-500/15 bg-yellow-500/[0.04]",
+};
 
 const container = {
   hidden: {},
@@ -40,6 +90,7 @@ const item = {
 export function ChatArea() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const { getActiveChat, isStreaming } = useChatStore();
+  const { sendMessage } = useChat();
   const chat = getActiveChat();
   const messages = chat?.messages ?? [];
 
@@ -49,38 +100,38 @@ export function ChatArea() {
 
   if (!chat || messages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center p-6 overflow-hidden">
+      <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-violet scrollbar-track-transparent">
         <motion.div
           variants={container}
           initial="hidden"
           animate="visible"
           className="w-full max-w-2xl"
         >
-          {/* Hero brand */}
-          <motion.div variants={item} className="text-center mb-10">
+          {/* Hero */}
+          <motion.div variants={item} className="text-center mb-8">
             <motion.div
               initial={{ scale: 0.7, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 160, damping: 18, delay: 0.05 }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl border border-violet-500/20 bg-violet-500/[0.04] mb-5"
+              className="inline-flex items-center justify-center w-14 h-14 rounded-2xl border border-violet-500/20 bg-violet-500/[0.04] mb-5"
             >
-              <AILogo size={44} animated />
+              <AILogo size={40} animated />
             </motion.div>
             <HeroBrandText />
           </motion.div>
 
-          {/* Bento grid */}
-          <motion.div variants={item} className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+          {/* Provider bento grid */}
+          <motion.div variants={item} className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
             {BENTO_FEATURES.map((f) => (
               <motion.div
                 key={f.title}
-                whileHover={{ y: -2, backgroundColor: "rgba(255,255,255,0.025)" }}
+                whileHover={{ y: -2, backgroundColor: "rgba(255,255,255,0.022)" }}
                 transition={{ duration: 0.15 }}
-                className="relative p-3.5 rounded-lg border border-white/[0.06] bg-white/[0.01] cursor-default"
+                className={`relative p-3 rounded-lg border border-white/[0.06] bg-white/[0.01] cursor-default transition-colors ${f.bg}`}
               >
-                <div className="flex items-start justify-between mb-2.5">
-                  <span className="text-white/25">{f.icon}</span>
-                  <span className={`text-[9px] font-bold tracking-widest font-mono border px-1.5 py-0.5 rounded ${BADGE_COLORS[f.color]}`}>
+                <div className="flex items-start justify-between mb-2">
+                  <span className={f.logoColor}>{f.logo}</span>
+                  <span className={`text-[9px] font-bold tracking-widest font-mono border px-1.5 py-0.5 rounded ${f.badgeColor}`}>
                     {f.badge}
                   </span>
                 </div>
@@ -99,16 +150,12 @@ export function ChatArea() {
               {PROMPTS.map((p) => (
                 <motion.button
                   key={p.text}
+                  onClick={() => sendMessage(p.text)}
                   whileHover={{ x: 3, backgroundColor: "rgba(255,255,255,0.025)" }}
                   whileTap={{ scale: 0.99 }}
                   className="w-full text-left px-3.5 py-2.5 rounded-lg border border-white/[0.05] hover:border-white/[0.09] text-xs text-white/35 hover:text-white/60 transition-all flex items-center gap-3 group"
                 >
-                  <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border flex-shrink-0 ${
-                    p.lang === "py" ? "text-green-400/60 border-green-500/15 bg-green-500/[0.04]"
-                    : p.lang === "js" ? "text-yellow-400/60 border-yellow-500/15 bg-yellow-500/[0.04]"
-                    : p.lang === "html" ? "text-rose-400/60 border-rose-500/15 bg-rose-500/[0.04]"
-                    : "text-sky-400/60 border-sky-500/15 bg-sky-500/[0.04]"
-                  }`}>
+                  <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border flex-shrink-0 ${LANG_COLORS[p.lang] ?? "text-white/40 border-white/10"}`}>
                     {p.lang.toUpperCase()}
                   </span>
                   <span className="flex-1">{p.text}</span>
@@ -136,7 +183,9 @@ export function ChatArea() {
             />
           ))}
         </AnimatePresence>
-        {isStreaming && messages[messages.length - 1]?.role !== "assistant" && <TypingIndicator />}
+        {isStreaming && messages[messages.length - 1]?.role !== "assistant" && (
+          <TypingIndicator />
+        )}
         <div ref={bottomRef} />
       </div>
     </div>

@@ -85,11 +85,12 @@ export function AILogo({ size = 28, animated = false, className = "" }: AILogoPr
         <motion.circle
           cx="20"
           cy="20"
-          r="3.5"
+          r={3.5}
           stroke="#a78bfa"
           strokeWidth="0.5"
           fill="none"
-          animate={{ r: [3.5, 8, 3.5], opacity: [0.6, 0, 0.6] }}
+          animate={{ scale: [1, 2.3, 1], opacity: [0.6, 0, 0.6] }}
+          style={{ originX: "20px", originY: "20px" }}
           transition={{ duration: 2.5, repeat: Infinity, ease: "easeOut" }}
         />
       )}

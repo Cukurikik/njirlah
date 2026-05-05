@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { nanoid } from "nanoid";
 
 export type MessageRole = "user" | "assistant" | "system";
-export type ModelProvider = "cloudflare" | "openrouter";
+export type ModelProvider = "cloudflare" | "openrouter" | "replit";
 
 export interface Message {
   id: string;
@@ -45,8 +45,8 @@ interface ChatStore {
 export const useChatStore = create<ChatStore>((set, get) => ({
   chats: [],
   activeChatId: null,
-  selectedModel: "@cf/meta/llama-3.1-8b-instruct",
-  selectedProvider: "cloudflare",
+  selectedModel: "gpt-5.4",
+  selectedProvider: "replit",
   isStreaming: false,
 
   createChat: () => {
@@ -56,7 +56,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       chats: [
         {
           id,
-          title: "Chat Baru",
+          title: "New Chat",
           messages: [],
           createdAt: Date.now(),
           model: selectedModel,

@@ -143,6 +143,7 @@ function buildPreviewDoc(content: string, language?: string): string {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<script src="https://cdn.tailwindcss.com"><\/script>
 <style>
   *, *::before, *::after { box-sizing: border-box; }
   body { margin: 0; background: #050505; color: #e2e8f0;

@@ -1,11 +1,21 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Search, Zap, Cloud, Key, X, Check } from "lucide-react";
+import { ChevronDown, Search, Zap, Cloud, Key, X, Check, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useChatStore, type ModelProvider } from "@/store/chat-store";
 import { useApiKeyStore } from "@/store/api-key-store";
 import { fetchOpenRouterModels, isModelFree, getProviderFromModelId, type OpenRouterModel } from "@/lib/openrouter";
 import { fetchCloudflareModels, type CloudflareModel } from "@/lib/cloudflare";
+import { OpenAILogo } from "@/components/ui/AIProviderLogos";
+
+const REPLIT_MODELS = [
+  { id: "gpt-5.4",    name: "GPT-5.4",     note: "Most capable · default" },
+  { id: "gpt-5.2",    name: "GPT-5.2",     note: "Balanced" },
+  { id: "gpt-5-mini", name: "GPT-5 Mini",  note: "Fast" },
+  { id: "gpt-5-nano", name: "GPT-5 Nano",  note: "Fastest & cheapest" },
+  { id: "o4-mini",    name: "o4-mini",     note: "Best reasoning" },
+  { id: "o3",         name: "o3",          note: "Deep reasoning" },
+];
 
 const PROVIDERS = [
   "AI21","AionLabs","AkashML","Alibaba Cloud","Amazon Bedrock","Anthropic","Arcee AI",
@@ -23,10 +33,12 @@ const dropdownVariants = {
   exit: { opacity: 0, y: -6, scale: 0.97, transition: { duration: 0.15 } },
 };
 
+type ActiveTab = "all" | "replit" | "cloudflare" | "openrouter";
+
 export function ModelSelector() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"all" | "cloudflare" | "openrouter">("all");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("all");
   const [selectedProviderFilter, setSelectedProviderFilter] = useState<string | null>(null);
 
   const { selectedModel, selectedProvider, setSelectedModel } = useChatStore();
@@ -46,6 +58,9 @@ export function ModelSelector() {
   });
 
   const displayName = useMemo(() => {
+    if (selectedProvider === "replit") {
+      return REPLIT_MODELS.find((m) => m.id === selectedModel)?.name ?? selectedModel;
+    }
     if (selectedProvider === "cloudflare") {
       const m = cfModels.find((m) => m.id === selectedModel);
       return m?.name || selectedModel.split("/").pop() || selectedModel;
@@ -53,6 +68,11 @@ export function ModelSelector() {
     const m = orModels.find((m) => m.id === selectedModel);
     return m?.name || selectedModel;
   }, [selectedModel, selectedProvider, cfModels, orModels]);
+
+  const filteredReplit = REPLIT_MODELS.filter((m) => {
+    const s = search.toLowerCase();
+    return (activeTab === "all" || activeTab === "replit") && (m.id.includes(s) || m.name.toLowerCase().includes(s));
+  });
 
   const filteredCf = cfModels.filter((m) => {
     const s = search.toLowerCase();
@@ -79,11 +99,18 @@ export function ModelSelector() {
     setSearch("");
   };
 
-  const tabs = [
-    { key: "all" as const, label: "All" },
-    { key: "cloudflare" as const, label: "Cloudflare" },
-    { key: "openrouter" as const, label: "OpenRouter" },
+  const tabs: { key: ActiveTab; label: string }[] = [
+    { key: "all",        label: "All" },
+    { key: "replit",     label: "Built-in" },
+    { key: "cloudflare", label: "Cloudflare" },
+    { key: "openrouter", label: "OpenRouter" },
   ];
+
+  const providerIcon = () => {
+    if (selectedProvider === "replit")     return <span className="text-violet-400"><OpenAILogo size={12} /></span>;
+    if (selectedProvider === "cloudflare") return <span className="text-orange-400"><Cloud size={12} /></span>;
+    return <span className="text-amber-400"><Zap size={12} /></span>;
+  };
 
   return (
     <div className="relative">
@@ -93,9 +120,7 @@ export function ModelSelector() {
         whileTap={{ scale: 0.97 }}
         className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/[0.07] transition-colors text-sm max-w-[220px]"
       >
-        <span className={selectedProvider === "cloudflare" ? "text-violet-400" : "text-orange-400"}>
-          {selectedProvider === "cloudflare" ? <Cloud size={12} /> : <Zap size={12} />}
-        </span>
+        {providerIcon()}
         <span className="text-white/70 truncate text-xs font-medium">{displayName}</span>
         <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
           <ChevronDown size={11} className="text-white/25 flex-shrink-0" />
@@ -111,7 +136,7 @@ export function ModelSelector() {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="absolute top-full left-0 mt-1.5 w-[460px] max-h-[500px] flex flex-col bg-black border border-white/[0.08] rounded-lg shadow-2xl z-50 overflow-hidden"
+              className="absolute top-full left-0 mt-1.5 w-[460px] max-h-[520px] flex flex-col bg-black border border-white/[0.08] rounded-lg shadow-2xl z-50 overflow-hidden"
             >
               {/* Search + tabs */}
               <div className="p-3 border-b border-white/[0.06] space-y-2">
@@ -172,11 +197,48 @@ export function ModelSelector() {
 
               {/* Model list */}
               <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-violet scrollbar-track-transparent">
+
+                {/* ── NJIRLAH AI Built-in section ── */}
+                {(activeTab === "all" || activeTab === "replit") && filteredReplit.length > 0 && (
+                  <div>
+                    <div className="sticky top-0 flex items-center gap-1.5 px-3 py-2 bg-black border-b border-white/[0.04] z-10">
+                      <Sparkles size={10} className="text-violet-400/60" />
+                      <span className="text-[10px] font-semibold text-violet-400/60 tracking-widest uppercase font-mono">NJIRLAH AI Built-in</span>
+                      <span className="ml-auto text-[10px] text-green-400/60 font-mono">no key required · free</span>
+                    </div>
+                    {filteredReplit.map((m, i) => {
+                      const active = selectedModel === m.id && selectedProvider === "replit";
+                      return (
+                        <motion.button
+                          key={m.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: i * 0.02 }}
+                          onClick={() => selectModel(m.id, "replit")}
+                          whileHover={{ backgroundColor: "rgba(255,255,255,0.03)" }}
+                          className={`w-full text-left px-3 py-2.5 transition-all flex items-center gap-2.5 ${active ? "bg-violet-500/[0.08] border-l-2 border-violet-400" : ""}`}
+                        >
+                          <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border flex-shrink-0 ${active ? "text-violet-300 border-violet-500/30 bg-violet-500/10" : "text-white/25 border-white/[0.08]"}`}>NJ</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-white/75 truncate font-medium">{m.name}</p>
+                            <p className="text-[10px] text-white/25 truncate font-mono">{m.note}</p>
+                          </div>
+                          {active
+                            ? <Check size={11} className="text-violet-400 flex-shrink-0" />
+                            : <span className="text-[9px] font-bold text-green-400/60 border border-green-500/20 px-1.5 py-0.5 rounded font-mono flex-shrink-0">FREE</span>
+                          }
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* ── Cloudflare section ── */}
                 {(activeTab === "all" || activeTab === "cloudflare") && filteredCf.length > 0 && (
                   <div>
                     <div className="sticky top-0 flex items-center gap-1.5 px-3 py-2 bg-black border-b border-white/[0.04] z-10">
-                      <Cloud size={10} className="text-violet-400/60" />
-                      <span className="text-[10px] font-semibold text-violet-400/60 tracking-widest uppercase font-mono">Cloudflare Workers AI</span>
+                      <Cloud size={10} className="text-orange-400/60" />
+                      <span className="text-[10px] font-semibold text-orange-400/60 tracking-widest uppercase font-mono">Cloudflare Workers AI</span>
                       <span className="ml-auto text-[10px] text-white/20 font-mono">built-in · free</span>
                     </div>
                     {filteredCf.map((m, i) => {
@@ -189,7 +251,7 @@ export function ModelSelector() {
                           transition={{ delay: i * 0.02 }}
                           onClick={() => selectModel(m.id, "cloudflare")}
                           whileHover={{ backgroundColor: "rgba(255,255,255,0.03)" }}
-                          className={`w-full text-left px-3 py-2.5 transition-all flex items-center gap-2.5 ${active ? "bg-violet-500/[0.07] border-l border-violet-400" : ""}`}
+                          className={`w-full text-left px-3 py-2.5 transition-all flex items-center gap-2.5 ${active ? "bg-orange-500/[0.07] border-l-2 border-orange-400" : ""}`}
                         >
                           <span className="badge-cf font-mono flex-shrink-0">CF</span>
                           <div className="flex-1 min-w-0">
@@ -197,7 +259,7 @@ export function ModelSelector() {
                             <p className="text-[10px] text-white/20 truncate font-mono">{m.id}</p>
                           </div>
                           {active
-                            ? <Check size={11} className="text-violet-400 flex-shrink-0" />
+                            ? <Check size={11} className="text-orange-400 flex-shrink-0" />
                             : <span className="badge-free flex-shrink-0">FREE</span>
                           }
                         </motion.button>
@@ -206,11 +268,12 @@ export function ModelSelector() {
                   </div>
                 )}
 
+                {/* ── OpenRouter section ── */}
                 {(activeTab === "all" || activeTab === "openrouter") && (
                   <div>
                     <div className="sticky top-0 flex items-center gap-1.5 px-3 py-2 bg-black border-b border-white/[0.04] z-10">
-                      <Zap size={10} className="text-orange-400/60" />
-                      <span className="text-[10px] font-semibold text-orange-400/60 tracking-widest uppercase font-mono">OpenRouter</span>
+                      <Zap size={10} className="text-amber-400/60" />
+                      <span className="text-[10px] font-semibold text-amber-400/60 tracking-widest uppercase font-mono">OpenRouter</span>
                       {!hasKey && (
                         <span className="ml-auto flex items-center gap-1 text-[10px] text-amber-400/60 font-mono">
                           <Key size={9} /> API key required
@@ -218,11 +281,7 @@ export function ModelSelector() {
                       )}
                     </div>
                     {!hasKey ? (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="px-4 py-8 text-center"
-                      >
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-4 py-8 text-center">
                         <Key size={20} className="mx-auto mb-3 text-white/10" />
                         <p className="text-xs text-white/25 font-mono">Enter your OpenRouter API key to access 200+ models</p>
                       </motion.div>
@@ -241,7 +300,7 @@ export function ModelSelector() {
                             transition={{ delay: i * 0.008 }}
                             onClick={() => selectModel(m.id, "openrouter")}
                             whileHover={{ backgroundColor: "rgba(255,255,255,0.03)" }}
-                            className={`w-full text-left px-3 py-2.5 transition-all flex items-center gap-2.5 ${active ? "bg-orange-500/[0.06] border-l border-orange-400" : ""}`}
+                            className={`w-full text-left px-3 py-2.5 transition-all flex items-center gap-2.5 ${active ? "bg-amber-500/[0.06] border-l-2 border-amber-400" : ""}`}
                           >
                             <span className="badge-or font-mono flex-shrink-0">OR</span>
                             <div className="flex-1 min-w-0">
@@ -249,7 +308,7 @@ export function ModelSelector() {
                               <p className="text-[10px] text-white/20 truncate font-mono">{m.id}</p>
                             </div>
                             {active
-                              ? <Check size={11} className="text-orange-400 flex-shrink-0" />
+                              ? <Check size={11} className="text-amber-400 flex-shrink-0" />
                               : free
                               ? <span className="badge-free flex-shrink-0">FREE</span>
                               : price

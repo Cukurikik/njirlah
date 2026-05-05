@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useChatStore, type Message } from "@/store/chat-store";
 import { useChat } from "@/hooks/useChat";
 import { MarkdownContent } from "./MarkdownContent";
-import { UnicornIcon } from "@/components/ui/UnicornLogo";
+import { AIIcon } from "@/components/ui/AILogo";
 
 interface ChatBubbleProps {
   message: Message;
@@ -22,7 +22,7 @@ export function TypingIndicator() {
       className="flex items-start gap-3 mb-4"
     >
       <div className="w-6 h-6 rounded border border-violet-500/20 bg-violet-500/[0.06] flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden">
-        <UnicornIcon size={16} />
+        <AIIcon size={16} />
       </div>
       <div className="flex items-center gap-1.5 h-8 px-3.5 rounded-md border border-white/[0.06] bg-white/[0.02]">
         {[0, 1, 2].map((i) => (
@@ -74,7 +74,7 @@ export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) 
         {isUser ? (
           <span className="text-[10px] font-bold text-violet-300 font-mono">U</span>
         ) : (
-          <UnicornIcon size={16} />
+          <AIIcon size={16} />
         )}
       </div>
 
@@ -106,11 +106,7 @@ export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) 
 
         {/* Action toolbar */}
         {!isUser && !message.isStreaming && message.content && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0 }}
-            className="flex items-center gap-0.5 group-hover:opacity-100 opacity-0 transition-opacity duration-150"
-          >
+          <div className="flex items-center gap-0.5 group-hover:opacity-100 opacity-0 transition-opacity duration-150">
             {[
               {
                 icon: copied
@@ -148,7 +144,7 @@ export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) 
                 {action.icon}
               </motion.button>
             ))}
-          </motion.div>
+          </div>
         )}
       </div>
     </motion.div>
