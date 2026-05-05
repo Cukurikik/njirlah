@@ -11,6 +11,7 @@ import { ChatArea } from "@/components/chat/ChatArea";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ApiKeyModal } from "@/components/chat/ApiKeyModal";
 import { ExportModal } from "@/components/chat/ExportModal";
+import { DevPanel } from "@/components/dev/DevPanel";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 1000 * 60 * 5 } },
@@ -24,6 +25,7 @@ const pageVariants = {
 function AppInner() {
   const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [devPanelOpen, setDevPanelOpen] = useState(false);
   const { loadKey } = useApiKeyStore();
   const { chats, createChat } = useChatStore();
 
@@ -45,11 +47,19 @@ function AppInner() {
           onExport={() => setExportModalOpen(true)}
         />
 
-        <div className="flex flex-col flex-1 min-w-0 h-full">
-          <Header />
-          <ChatArea />
-          <ChatInput />
-          <Footer />
+        <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
+          <Header
+            onToggleDevPanel={() => setDevPanelOpen(!devPanelOpen)}
+            devPanelOpen={devPanelOpen}
+          />
+          <div className="flex flex-1 min-h-0 overflow-hidden">
+            <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+              <ChatArea />
+              <ChatInput />
+              <Footer />
+            </div>
+            <DevPanel open={devPanelOpen} onClose={() => setDevPanelOpen(false)} />
+          </div>
         </div>
       </div>
 

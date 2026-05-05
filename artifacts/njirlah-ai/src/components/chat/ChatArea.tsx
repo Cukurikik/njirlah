@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useChatStore } from "@/store/chat-store";
 import { ChatBubble, TypingIndicator } from "./ChatBubble";
 import { HeroBrandText } from "@/components/ui/TypewriterText";
-import { UnicornLogo } from "@/components/ui/UnicornLogo";
+import { AILogo } from "@/components/ui/AILogo";
 import { Cpu, Zap, Lock, Code2, Sparkles } from "lucide-react";
 
 const BENTO_FEATURES = [
@@ -64,7 +64,7 @@ export function ChatArea() {
               transition={{ type: "spring", stiffness: 160, damping: 18, delay: 0.05 }}
               className="inline-flex items-center justify-center w-16 h-16 rounded-2xl border border-violet-500/20 bg-violet-500/[0.04] mb-5"
             >
-              <UnicornLogo size={44} animated />
+              <AILogo size={44} animated />
             </motion.div>
             <HeroBrandText />
           </motion.div>
