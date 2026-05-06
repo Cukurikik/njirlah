@@ -1,35 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AgentCodePanel } from "@/components/agent/AgentCodePanel";
 import { LivePreviewPanel } from "@/components/preview/LivePreviewPanel";
-import type { AgentFile, AgentStatus } from "@/types/agent-types";
+import { useAgentStore } from "@/store/agent-store";
 
 type Tab = "code" | "preview";
 
 export default function AgentPage() {
-  const [files, setFiles] = useState<Record<string, AgentFile>>({});
-  const [fileOrder, setFileOrder] = useState<string[]>([]);
-  const [activeFile, setActiveFile] = useState<string | null>(null);
-  const [status, setStatus] = useState<AgentStatus>("idle");
-  const [logs, setLogs] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("code");
-
-  const isGenerating = status === "generating";
-
-  const handleFilesUpdate = useCallback(
-    (updater: (prev: Record<string, AgentFile>) => Record<string, AgentFile>) =>
-      setFiles(updater),
-    [],
-  );
-  const handleFileOrderUpdate = useCallback(
-    (updater: (prev: string[]) => string[]) => setFileOrder(updater),
-    [],
-  );
-  const handleLogsUpdate = useCallback(
-    (updater: (prev: string[]) => string[]) => setLogs(updater),
-    [],
-  );
+  const { files, fileOrder, isGenerating } = useAgentStore();
 
   return (
     <div
@@ -38,13 +17,14 @@ export default function AgentPage() {
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
-        .scrollbar-thin::-webkit-scrollbar { width: 4px; }
-        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
         textarea::-webkit-scrollbar { width: 4px; }
         textarea::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
       `}</style>
 
+      {/* Mobile: tab switcher */}
       <div className="lg:hidden flex flex-col w-full h-full">
         <div
           className="flex items-center border-b border-white/5 flex-shrink-0"
@@ -81,21 +61,7 @@ export default function AgentPage() {
                 transition={{ duration: 0.2 }}
                 className="h-full"
               >
-                <AgentCodePanel
-                  files={files}
-                  fileOrder={fileOrder}
-                  activeFile={activeFile}
-                  status={status}
-                  logs={logs}
-                  error={error}
-                  onFileSelect={setActiveFile}
-                  onFilesUpdate={handleFilesUpdate}
-                  onFileOrderUpdate={handleFileOrderUpdate}
-                  onStatusChange={setStatus}
-                  onLogsUpdate={handleLogsUpdate}
-                  onErrorChange={setError}
-                  onActiveFileChange={setActiveFile}
-                />
+                <AgentCodePanel />
               </motion.div>
             ) : (
               <motion.div
@@ -117,6 +83,7 @@ export default function AgentPage() {
         </div>
       </div>
 
+      {/* Desktop: side-by-side */}
       <div className="hidden lg:flex w-full h-full">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -125,21 +92,7 @@ export default function AgentPage() {
           className="flex-shrink-0 h-full border-r border-white/5 overflow-hidden"
           style={{ width: "40%" }}
         >
-          <AgentCodePanel
-            files={files}
-            fileOrder={fileOrder}
-            activeFile={activeFile}
-            status={status}
-            logs={logs}
-            error={error}
-            onFileSelect={setActiveFile}
-            onFilesUpdate={handleFilesUpdate}
-            onFileOrderUpdate={handleFileOrderUpdate}
-            onStatusChange={setStatus}
-            onLogsUpdate={handleLogsUpdate}
-            onErrorChange={setError}
-            onActiveFileChange={setActiveFile}
-          />
+          <AgentCodePanel />
         </motion.div>
 
         <motion.div

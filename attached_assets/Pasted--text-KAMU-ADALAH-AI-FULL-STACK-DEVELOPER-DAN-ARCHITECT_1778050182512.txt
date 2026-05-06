@@ -1,0 +1,187 @@
+
+
+---
+
+```text
+KAMU ADALAH AI FULL‑STACK DEVELOPER DAN ARCHITECT. TUGASMU SEKARANG ADALAH MEMBUAT **HALAMAN BARU** DI APLIKASI NJIRLAH AI YANG BERFUNGSI SEBAGAI **AGENT CODE GENERATOR** DENGAN KEMAMPUAN STREAMING REAL‑TIME, PENULISAN KODE BARIS DEMI BARIS, DAN LIVE PREVIEW. HALAMAN INI HARUS SEPENUHNYA PRODUCTION‑READY, BUKAN SIMULASI. KAMU HARUS MENGIKUTI SELURUH SPESIFIKASI DI BAWAH DENGAN TEGAS. TIDAK BOLEH MENYIMPANG.
+
+---
+
+## 1. HALAMAN BARU: `/agent`
+Buat halaman baru di `app/agent/page.tsx`. Halaman ini menggunakan layout utama NJIRLAH AI (yang sudah memiliki background Unicorn.Studio, sidebar, dan footer "Dibuat dengan sepenuh hati oleh Andikaa Saputraa"). Navigasi ke halaman ini bisa diakses dari sidebar dengan label **"Agent Code"**.
+
+---
+
+## 2. STRUKTUR HALAMAN (LAYOUT DUA PANEL)
+- **Panel Kiri (40% lebar)**: **Agent IDE** – menampilkan alur kerja agent, file tree, dan editor kode dengan syntax highlighting.
+- **Panel Kanan (60% lebar)**: **Live Preview** – menampilkan pratinjau proyek dalam simulated browser frame.
+
+---
+
+## 3. PANEL KIRI: AGENT IDE (KOMPONEN UTAMA)
+
+### a. Header Panel
+- Judul: "Agent Code Generator"
+- Indikator status: 
+  - `🔄 Generating...` (dengan spinner) saat agen sedang bekerja.
+  - `✅ Done` saat selesai.
+- Pilihan model: dropdown kecil yang menampilkan model dari OpenRouter (jika pengguna sudah memasukkan BYOK) dan model Cloudflare (selalu tersedia). Gunakan daftar model yang sudah di‑fetch (dari store yang sudah ada).
+
+### b. File Tree (Komponen: `FileTree.tsx`)
+- Menampilkan daftar file yang dihasilkan/dalam proses.
+- Setiap item:
+  - Ikon file (📄) + nama file.
+  - Status: 
+    - `⏳` (pending) jika belum dimulai.
+    - `✍️` (mengetik) jika sedang di‑streaming.
+    - `✅` (selesai) jika sudah lengkap.
+  - File yang sedang aktif: background `bg-blue-500/10`, border kiri `border-l-2 border-blue-500`.
+- Klik pada file akan menampilkan isinya di Code Editor.
+
+### c. Code Editor (Komponen: `CodeEditor.tsx`)
+- Menampilkan kode dari file yang dipilih dengan **syntax highlighting** gunakan library `react-syntax-highlighter` (tema `oneDark` atau `atomDark`).
+- Saat file sedang di‑streaming, teks muncul **secara real‑time**:
+  - Setiap chunk yang diterima dari SSE langsung ditambahkan ke konten file.
+  - Untuk efek "pengetikan", bisa ditampilkan karakter per karakter dengan interval kecil, atau langsung menampilkan baris per baris dengan animasi highlight kuning sementara pada baris baru.
+  - Pastikan scroll otomatis mengikuti baris terakhir.
+- Setelah file selesai, editor menampilkan kode lengkap dengan highlight.
+
+### d. Input Prompt (di bagian bawah panel kiri, di atas tombol aksi)
+- `textarea` dengan placeholder: "Describe the app you want to build... (e.g., Create a landing page with hero and navbar)"
+- Tombol **"Generate"** (biru neon, glowing, pulse saat generating).
+- Tombol **"Stop"** (merah, hanya muncul saat generating).
+
+---
+
+## 4. PANEL KANAN: LIVE PREVIEW (KOMPONEN: `LivePreviewPanel.tsx`)
+
+### a. Simulated Browser Frame (Komponen: `BrowserFrame.tsx`)
+- URL bar: menampilkan `localhost:3000` atau path sesuai proyek (misal `/index.html`), dengan ikon gembok hijau.
+- Tombol navigasi dekoratif (panah kiri/kanan, refresh) di kiri URL bar.
+- Tombol titik merah/kuning/hijau (dekoratif) di kiri atas.
+
+### b. Device Controls (Komponen: `DeviceControls.tsx`)
+- Tiga tombol ikon: Desktop (🖥️), Tablet (📱), Mobile (📱 kecil).
+- Default: Desktop.
+- Klik mengubah lebar viewport dengan animasi Framer Motion `layout`:
+  - Desktop: 100% lebar panel.
+  - Tablet: 768px, rata tengah.
+  - Mobile: 375px, rata tengah.
+
+### c. Viewport (iframe)
+- Gunakan `<iframe>` dengan `srcdoc` yang dihasilkan secara dinamis dari file‑file yang sudah selesai.
+- Setiap kali sebuah file selesai (`file_end` event), **perbarui konten iframe** dengan menggabungkan semua file menjadi satu HTML.
+- Jika proyek adalah React/JSX, gunakan **Babel standalone** di dalam iframe untuk transpilasi (load React, ReactDOM, Babel dari CDN). Contoh template:
+  ```html
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>/* CSS dari file */</style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+      // Gabungan JSX dari file
+    </script>
+  </body>
+  </html>
+  ```
+- Jika hanya HTML/CSS/JS, gabungkan langsung.
+
+---
+
+## 5. BACKEND: ENDPOINT AGENT (`/api/agent/generate`)
+- Method: `POST`
+- Menerima JSON body:
+  - `prompt`: string (instruksi pengguna).
+  - `modelSource`: `'openrouter'` atau `'cloudflare'`.
+  - `modelId`: string (model yang dipilih, wajib jika OpenRouter).
+- Header `x-api-key` (wajib jika OpenRouter) → diteruskan ke OpenRouter.
+- **Proses:**
+  1. Bangun system prompt yang memerintahkan LLM untuk menghasilkan kode proyek web lengkap dengan format ketat:
+     ```
+     Anda adalah AI pembuat kode. Berdasarkan permintaan pengguna, buatlah proyek web lengkap. Kembalikan setiap file dengan format:
+     
+     ###FILE: nama_file.ext
+     ```bahasa
+     ... kode ...
+     ```
+     
+     Jangan berikan teks lain selain blok file tersebut.
+     ```
+  2. Kirim request ke API LLM yang sesuai (OpenRouter Chat Completions atau Cloudflare Workers AI) dengan `stream: true`.
+  3. Baca stream menggunakan `ReadableStream`. Parsing setiap chunk untuk mencari delimiter `###FILE:`.
+  4. Untuk setiap file yang terdeteksi, kirim SSE event ke client:
+     - `event: file_start`, data: `{ filename }`
+     - `event: file_chunk`, data: `{ filename, chunk }` (per baris atau per beberapa karakter)
+     - `event: file_end`, data: `{ filename }`
+     - `event: agent_log`, data: `{ message }` (untuk log aktivitas)
+     - `event: done`, data: `{ message: "All files generated" }`
+     - `event: error`, data: `{ message }`
+  5. Jika tombol Stop ditekan, hentikan stream.
+
+- **Parsing stream** harus robust: tangani kemungkinan delimiter terpecah antar chunk.
+
+---
+
+## 6. STATE MANAGEMENT (Zustand)
+Buat store baru `agent-store.ts` dengan state:
+- `files: Record<string, { content: string; status: 'pending' | 'streaming' | 'done' }>`
+- `activeFile: string | null`
+- `isGenerating: boolean`
+- `logs: string[]`
+Actions: `startGeneration`, `addFileStart`, `appendChunk`, `setFileDone`, `stopGeneration`, dll.
+
+---
+
+## 7. INTEGRASI DENGAN SISTEM YANG ADA
+- Gunakan `useModelStore` (dari store yang sudah ada) untuk mengambil daftar model OpenRouter (perlu BYOK) dan Cloudflare (built‑in).
+- OpenRouter key dari `useApiKeyStore` (terenkripsi, plaintext hanya di memori). Kirimkan key melalui header `x-api-key` saat request ke `/api/agent/generate`.
+- Header `x-api-key` tidak boleh disimpan di server.
+
+---
+
+## 8. ANIMASI & UI/UX (WAJIB)
+- **Framer Motion**:
+  - Item file tree masuk stagger dari kiri.
+  - Editor: baris baru muncul dengan background highlight kuning (`bg-yellow-500/20`) selama 1 detik lalu hilang.
+  - Tombol Generate: pulse scale saat generating.
+  - Transisi viewport device smooth (layout animation).
+- Warna tema: gelap (`bg-[#0a0a10]`, panel `bg-[#0d0d18]`, border `border-white/10`).
+- **Footer Andikaa Saputraa** tetap muncul di bawah halaman (layout utama sudah menyediakan).
+
+---
+
+## 9. DELIVERABLES (FILE YANG HARUS DIBUAT)
+1. `app/agent/page.tsx` – halaman utama Agent.
+2. `components/agent/AgentCodePanel.tsx` – panel kiri utama.
+3. `components/agent/FileTree.tsx`
+4. `components/agent/CodeEditor.tsx`
+5. `components/preview/LivePreviewPanel.tsx` – panel kanan.
+6. `components/preview/BrowserFrame.tsx`
+7. `components/preview/DeviceControls.tsx`
+8. `store/agent-store.ts`
+9. `app/api/agent/generate/route.ts` – endpoint SSE.
+10. `lib/agent-parser.ts` – parsing stream LLM.
+11. `lib/build-preview-html.ts` – membangun HTML untuk iframe.
+12. `types/agent-types.ts` – tipe data.
+
+Tambahkan navigasi di sidebar (`components/layout/Sidebar.tsx`) jika memungkinkan, dengan tautan ke `/agent`.
+
+---
+
+## 10. ATURAN KETAT
+- **Tidak boleh simulasi**: backend harus benar‑benar memanggil LLM via OpenRouter/Cloudflare dan menghasilkan kode.
+- Streaming harus real‑time, tidak ada buffering.
+- Preview wajib diperbarui otomatis setelah setiap file selesai.
+- Kode harus TypeScript strict, tanpa `any`.
+- Error handling jelas.
+
+---
+
+**MULAI SEKARANG. BUAT HALAMAN `/agent` INI DENGAN LENGKAP, SIAP PRODUKSI, DAN TERINTEGRASI DENGAN NJIRLAH AI.**
+```

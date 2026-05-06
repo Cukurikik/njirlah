@@ -1,95 +1,67 @@
-import { useState, useCallback, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Square, ChevronDown } from "lucide-react";
 import { FileTree } from "./FileTree";
 import { CodeEditor } from "./CodeEditor";
-import type { AgentFile, AgentStatus } from "@/types/agent-types";
+import { useAgentStore } from "@/store/agent-store";
 import { useApiKeyStore } from "@/store/api-key-store";
 import { useModelStore } from "@/store/model-store";
 
 const API_BASE = "/api";
 
 const DEFAULT_PROMPTS = [
-  "Landing page dengan hero section, navbar, dan footer",
+  "Landing page dengan hero, navbar, dan footer",
   "To-do app dengan dark mode dan animasi",
   "Dashboard analytics dengan chart dan statistik",
   "Portfolio pribadi dengan galeri proyek",
 ];
 
-interface AgentCodePanelProps {
-  files: Record<string, AgentFile>;
-  fileOrder: string[];
-  activeFile: string | null;
-  status: AgentStatus;
-  logs: string[];
-  error: string | null;
-  onFileSelect: (filename: string) => void;
-  onFilesUpdate: (updater: (prev: Record<string, AgentFile>) => Record<string, AgentFile>) => void;
-  onFileOrderUpdate: (updater: (prev: string[]) => string[]) => void;
-  onStatusChange: (status: AgentStatus) => void;
-  onLogsUpdate: (updater: (prev: string[]) => string[]) => void;
-  onErrorChange: (error: string | null) => void;
-  onActiveFileChange: (filename: string | null) => void;
-}
-
-export function AgentCodePanel({
-  files,
-  fileOrder,
-  activeFile,
-  status,
-  logs,
-  error,
-  onFileSelect,
-  onFilesUpdate,
-  onFileOrderUpdate,
-  onStatusChange,
-  onLogsUpdate,
-  onErrorChange,
-  onActiveFileChange,
-}: AgentCodePanelProps) {
+export function AgentCodePanel() {
   const [prompt, setPrompt] = useState("");
   const [modelSource, setModelSource] = useState<"openrouter" | "cloudflare">("cloudflare");
   const [selectedModel, setSelectedModel] = useState("");
   const [showModelPicker, setShowModelPicker] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
+  const abortRef = { current: null as AbortController | null };
+
+  const {
+    files,
+    fileOrder,
+    activeFile,
+    isGenerating,
+    agentStatus,
+    logs,
+    error,
+    startGeneration,
+    stopGeneration,
+    setDone,
+    setError,
+    addFileStart,
+    appendChunk,
+    setFileDone,
+    setActiveFile,
+    addLog,
+  } = useAgentStore();
 
   const { openRouterKey } = useApiKeyStore();
   const { cloudflareModels, openrouterModels } = useModelStore();
 
-  const isGenerating = status === "generating";
-
-  const availableModels =
-    modelSource === "openrouter" ? openrouterModels : cloudflareModels;
+  const availableModels = modelSource === "openrouter" ? openrouterModels : cloudflareModels;
 
   const currentModelLabel =
     selectedModel ||
-    (modelSource === "cloudflare"
-      ? "@cf/meta/llama-3.1-8b-instruct"
-      : "openai/gpt-4o-mini");
-
-  const addLog = useCallback(
-    (msg: string) => onLogsUpdate((prev) => [...prev.slice(-49), msg]),
-    [onLogsUpdate],
-  );
+    (modelSource === "cloudflare" ? "@cf/meta/llama-3.1-8b-instruct" : "openai/gpt-4o-mini");
 
   const handleGenerate = async () => {
     if (!prompt.trim() || isGenerating) return;
 
-    onFilesUpdate(() => ({}));
-    onFileOrderUpdate(() => []);
-    onStatusChange("generating");
-    onErrorChange(null);
-    onActiveFileChange(null);
-    onLogsUpdate(() => []);
+    startGeneration();
     addLog("Menghubungi agen AI...");
 
     const controller = new AbortController();
     abortRef.current = controller;
 
     try {
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (modelSource === "openrouter" && openRouterKey) {
         headers["x-api-key"] = openRouterKey;
       }
@@ -105,14 +77,11 @@ export function AgentCodePanel({
         signal: controller.signal,
       });
 
-      if (!res.ok || !res.body) {
-        throw new Error(`Server error: ${res.status}`);
-      }
+      if (!res.ok || !res.body) throw new Error(`Server error: ${res.status}`);
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
-      let firstFileSet = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -137,56 +106,18 @@ export function AgentCodePanel({
               if (eventType === "agent_log") {
                 addLog(parsed.message ?? "");
               } else if (eventType === "file_start") {
-                const { filename } = parsed;
-                if (!firstFileSet) {
-                  firstFileSet = true;
-                  onActiveFileChange(filename);
-                }
-                onFileOrderUpdate((prev) =>
-                  prev.includes(filename) ? prev : [...prev, filename],
-                );
-                onFilesUpdate((prev) => ({
-                  ...prev,
-                  [filename]: {
-                    filename,
-                    content: "",
-                    isStreaming: true,
-                    isDone: false,
-                  },
-                }));
-                addLog(`📄 Membuat ${filename}...`);
+                addFileStart(parsed.filename);
+                addLog(`📄 Membuat ${parsed.filename}...`);
               } else if (eventType === "file_chunk") {
-                const { filename, chunk } = parsed;
-                onFilesUpdate((prev) => ({
-                  ...prev,
-                  [filename]: {
-                    ...(prev[filename] ?? {
-                      filename,
-                      content: "",
-                      isStreaming: true,
-                      isDone: false,
-                    }),
-                    content: (prev[filename]?.content ?? "") + chunk,
-                  },
-                }));
+                appendChunk(parsed.filename, parsed.chunk);
               } else if (eventType === "file_end") {
-                const { filename, content } = parsed;
-                onFilesUpdate((prev) => ({
-                  ...prev,
-                  [filename]: {
-                    ...(prev[filename] ?? { filename }),
-                    content: content ?? prev[filename]?.content ?? "",
-                    isStreaming: false,
-                    isDone: true,
-                  },
-                }));
-                addLog(`✅ ${filename} selesai`);
+                setFileDone(parsed.filename, parsed.content);
+                addLog(`✅ ${parsed.filename} selesai`);
               } else if (eventType === "done") {
-                onStatusChange("done");
+                setDone();
                 addLog("🎉 " + (parsed.message ?? "Selesai!"));
               } else if (eventType === "error") {
-                onStatusChange("error");
-                onErrorChange(parsed.message ?? "Unknown error");
+                setError(parsed.message ?? "Unknown error");
                 addLog("❌ Error: " + (parsed.message ?? ""));
               }
             } catch {}
@@ -195,16 +126,13 @@ export function AgentCodePanel({
           }
         }
       }
-
-      if (status !== "error") onStatusChange("done");
     } catch (err) {
       if ((err as Error).name === "AbortError") {
-        onStatusChange("stopped");
+        stopGeneration();
         addLog("⏹ Dihentikan.");
       } else {
-        onStatusChange("error");
         const msg = (err as Error).message ?? "Unknown error";
-        onErrorChange(msg);
+        setError(msg);
         addLog("❌ " + msg);
       }
     } finally {
@@ -214,10 +142,10 @@ export function AgentCodePanel({
 
   const handleStop = () => {
     abortRef.current?.abort();
-    onStatusChange("stopped");
+    stopGeneration();
   };
 
-  const statusColors: Record<AgentStatus, string> = {
+  const statusColors: Record<string, string> = {
     idle: "text-gray-500",
     generating: "text-blue-400",
     done: "text-green-400",
@@ -225,7 +153,7 @@ export function AgentCodePanel({
     stopped: "text-yellow-400",
   };
 
-  const statusLabels: Record<AgentStatus, string> = {
+  const statusLabels: Record<string, string> = {
     idle: "Siap",
     generating: "Generating...",
     done: "Selesai",
@@ -235,6 +163,7 @@ export function AgentCodePanel({
 
   return (
     <div className="flex flex-col h-full" style={{ background: "#0d0d18" }}>
+      {/* Header */}
       <div className="px-4 pt-4 pb-3 border-b border-white/5 flex-shrink-0">
         <div className="flex items-center justify-between">
           <h2
@@ -243,7 +172,7 @@ export function AgentCodePanel({
           >
             Agent Code Generator
           </h2>
-          <div className={`flex items-center gap-1.5 text-xs ${statusColors[status]}`}>
+          <div className={`flex items-center gap-1.5 text-xs ${statusColors[agentStatus]}`}>
             {isGenerating && (
               <motion.span
                 className="w-1.5 h-1.5 rounded-full bg-blue-400"
@@ -251,12 +180,14 @@ export function AgentCodePanel({
                 transition={{ repeat: Infinity, duration: 0.8 }}
               />
             )}
-            {statusLabels[status]}
+            {statusLabels[agentStatus]}
           </div>
         </div>
       </div>
 
+      {/* Main area: file tree + editor */}
       <div className="flex flex-1 min-h-0">
+        {/* File tree */}
         <div
           className="w-44 flex-shrink-0 border-r border-white/5 overflow-y-auto flex flex-col"
           style={{ background: "#080810" }}
@@ -269,15 +200,16 @@ export function AgentCodePanel({
               files={files}
               fileOrder={fileOrder}
               activeFile={activeFile}
-              onSelectFile={onFileSelect}
+              onSelectFile={setActiveFile}
             />
           </div>
         </div>
 
+        {/* Code editor + log console */}
         <div className="flex-1 min-w-0 flex flex-col">
           <div className="flex-1 min-h-0 overflow-hidden" style={{ background: "#0a0a12" }}>
             <CodeEditor
-              file={activeFile ? files[activeFile] ?? null : null}
+              file={activeFile ? (files[activeFile] ?? null) : null}
               filename={activeFile}
             />
           </div>
@@ -285,7 +217,7 @@ export function AgentCodePanel({
           {logs.length > 0 && (
             <div
               className="border-t border-white/5 px-3 py-2 overflow-y-auto flex-shrink-0"
-              style={{ maxHeight: "80px", background: "#06060e" }}
+              style={{ maxHeight: "76px", background: "#06060e" }}
             >
               {logs.slice(-8).map((log, i) => (
                 <div key={i} className="text-[10px] font-mono text-gray-500 leading-5">
@@ -297,6 +229,7 @@ export function AgentCodePanel({
         </div>
       </div>
 
+      {/* Bottom input area */}
       <div className="px-4 pb-4 pt-3 border-t border-white/5 space-y-3 flex-shrink-0">
         {error && (
           <div className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
@@ -304,13 +237,17 @@ export function AgentCodePanel({
           </div>
         )}
 
+        {/* Model picker */}
         <div className="relative">
           <button
             onClick={() => setShowModelPicker((v) => !v)}
             className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-xs text-gray-300 hover:border-white/20 transition-colors"
           >
             <span className="truncate font-mono">{currentModelLabel}</span>
-            <ChevronDown size={12} className={`flex-shrink-0 transition-transform ${showModelPicker ? "rotate-180" : ""}`} />
+            <ChevronDown
+              size={12}
+              className={`flex-shrink-0 transition-transform ${showModelPicker ? "rotate-180" : ""}`}
+            />
           </button>
 
           <AnimatePresence>
@@ -328,8 +265,10 @@ export function AgentCodePanel({
                     <button
                       key={src}
                       onClick={() => { setModelSource(src); setSelectedModel(""); }}
-                      className={`flex-1 py-2 text-xs font-medium capitalize transition-colors ${
-                        modelSource === src ? "bg-blue-600/20 text-blue-400" : "text-gray-500 hover:text-gray-300"
+                      className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                        modelSource === src
+                          ? "bg-blue-600/20 text-blue-400"
+                          : "text-gray-500 hover:text-gray-300"
                       }`}
                     >
                       {src === "cloudflare" ? "☁️ Cloudflare" : "🔑 OpenRouter"}
@@ -346,7 +285,9 @@ export function AgentCodePanel({
                     key={m.id}
                     onClick={() => { setSelectedModel(m.id); setShowModelPicker(false); }}
                     className={`w-full text-left px-3 py-2 text-[11px] transition-colors font-mono ${
-                      selectedModel === m.id ? "bg-blue-600/20 text-blue-400" : "text-gray-400 hover:bg-white/5 hover:text-white"
+                      selectedModel === m.id
+                        ? "bg-blue-600/20 text-blue-400"
+                        : "text-gray-400 hover:bg-white/5 hover:text-white"
                     }`}
                   >
                     {m.id}
@@ -354,7 +295,9 @@ export function AgentCodePanel({
                 ))}
                 {availableModels.length === 0 && (
                   <div className="px-4 py-3 text-[11px] text-gray-500 text-center">
-                    {modelSource === "cloudflare" ? "Using default Cloudflare model" : "Load OpenRouter models first"}
+                    {modelSource === "cloudflare"
+                      ? "Using default Cloudflare model"
+                      : "Load OpenRouter models first"}
                   </div>
                 )}
               </motion.div>
@@ -362,6 +305,7 @@ export function AgentCodePanel({
           </AnimatePresence>
         </div>
 
+        {/* Quick prompts */}
         <div>
           <div className="flex flex-wrap gap-1.5 mb-2">
             {DEFAULT_PROMPTS.map((p) => (
@@ -375,6 +319,7 @@ export function AgentCodePanel({
             ))}
           </div>
 
+          {/* Textarea + action button */}
           <div className="relative">
             <textarea
               value={prompt}
@@ -388,7 +333,7 @@ export function AgentCodePanel({
               style={{ fontFamily: "Inter, sans-serif" }}
               disabled={isGenerating}
             />
-            <div className="absolute right-3 bottom-3 flex gap-1.5">
+            <div className="absolute right-3 bottom-3">
               {isGenerating ? (
                 <motion.button
                   onClick={handleStop}
@@ -405,9 +350,19 @@ export function AgentCodePanel({
                   disabled={!prompt.trim()}
                   whileHover={prompt.trim() ? { scale: 1.1 } : {}}
                   whileTap={prompt.trim() ? { scale: 0.9 } : {}}
-                  animate={prompt.trim() ? { boxShadow: ["0 0 0px #3B82F6", "0 0 10px #3B82F666", "0 0 0px #3B82F6"] } : {}}
+                  animate={
+                    prompt.trim()
+                      ? {
+                          boxShadow: [
+                            "0 0 0px #3B82F6",
+                            "0 0 10px #3B82F666",
+                            "0 0 0px #3B82F6",
+                          ],
+                        }
+                      : {}
+                  }
                   transition={{ repeat: Infinity, duration: 2 }}
-                  className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Generate (⌘+Enter)"
                 >
                   <Send size={13} />
@@ -417,7 +372,7 @@ export function AgentCodePanel({
           </div>
         </div>
 
-        <p className="text-center text-[10px] text-gray-700 pb-0.5">
+        <p className="text-center text-[10px] text-gray-700">
           Dibuat dengan sepenuh hati oleh{" "}
           <span className="text-gray-600">Andikaa Saputraa</span>
         </p>

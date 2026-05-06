@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
-import { Plus, MessageSquare, Trash2, PanelLeftClose, PanelLeft, Key, LogOut, Download, Search, SlidersHorizontal, X } from "lucide-react";
+import { Plus, MessageSquare, Trash2, PanelLeftClose, PanelLeft, Key, LogOut, Download, Search, SlidersHorizontal, X, Code2 } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
 import { useApiKeyStore } from "@/store/api-key-store";
 import { formatDistanceToNow } from "date-fns";
@@ -238,6 +238,26 @@ export function Sidebar({ onOpenApiKey, onExport, onOpenCustomInstructions, mobi
 
       {/* Footer actions */}
       <div className="px-2 py-2 border-t border-white/[0.05] space-y-0.5">
+        <motion.button
+          onClick={() => { window.history.pushState({}, "", "/agent"); window.location.reload(); }}
+          whileHover={{ backgroundColor: "rgba(59,130,246,0.07)" }}
+          whileTap={{ scale: 0.97 }}
+          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[11px] transition-colors text-blue-400/70 hover:text-blue-400 ${collapsed ? "justify-center" : ""}`}
+        >
+          <Code2 size={12} />
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="whitespace-nowrap font-mono"
+              >
+                Agent Code
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
         <motion.button
           onClick={() => { window.history.pushState({}, "", "/animations"); window.location.reload(); }}
           whileHover={{ backgroundColor: "rgba(158,158,255,0.06)" }}
