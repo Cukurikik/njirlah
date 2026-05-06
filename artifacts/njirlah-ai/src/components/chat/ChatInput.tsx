@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUp, Loader2, Paperclip, Mic, MicOff, X } from "lucide-react";
+import { ArrowUp, Loader2, Paperclip, Mic, MicOff, X, GitCompare } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
 import { useChat } from "@/hooks/useChat";
 import { ModelSelector } from "@/components/chat/ModelSelector";
@@ -18,7 +18,11 @@ interface Attachment {
   type: string;
 }
 
-export function ChatInput() {
+interface ChatInputProps {
+  onOpenCompare?: () => void;
+}
+
+export function ChatInput({ onOpenCompare }: ChatInputProps) {
   const [input, setInput] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isListening, setIsListening] = useState(false);
@@ -63,17 +67,13 @@ export function ChatInput() {
     const files = Array.from(e.target.files ?? []);
     const MAX_SIZE = 200 * 1024;
     const newAttachments: Attachment[] = [];
-
     for (const file of files) {
       if (file.size > MAX_SIZE) continue;
       try {
         const content = await file.text();
         newAttachments.push({ name: file.name, content, type: file.type });
-      } catch {
-        // skip binary files
-      }
+      } catch { /* skip binary files */ }
     }
-
     setAttachments((prev) => [...prev, ...newAttachments]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -82,35 +82,23 @@ export function ChatInput() {
     if (!voiceSupported) return;
     const SpeechRec = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!SpeechRec) return;
-
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-      return;
-    }
-
+    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
     const recognition = new SpeechRec();
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = "id-ID";
-
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
     recognition.onerror = () => setIsListening(false);
     recognition.onresult = (event) => {
-      const transcript = Array.from(event.results)
-        .map((r) => r[0].transcript)
-        .join("");
+      const transcript = Array.from(event.results).map((r) => r[0].transcript).join("");
       setInput(transcript);
     };
-
     recognitionRef.current = recognition;
     recognition.start();
   }, [isListening, voiceSupported]);
 
-  useEffect(() => {
-    return () => recognitionRef.current?.stop();
-  }, []);
+  useEffect(() => { return () => recognitionRef.current?.stop(); }, []);
 
   const hasContent = input.trim().length > 0 || attachments.length > 0;
 
@@ -124,10 +112,21 @@ export function ChatInput() {
     >
       <div className="max-w-3xl mx-auto space-y-2">
 
-        {/* ── Model selector row ── */}
+        {/* ── Model row + Compare button ── */}
         <div className="flex items-center gap-2 px-1">
           <span className="text-[10px] text-white/15 font-mono tracking-widest uppercase">Model</span>
           <ModelSelector />
+          <div className="flex-1" />
+          <motion.button
+            onClick={onOpenCompare}
+            whileHover={{ backgroundColor: "rgba(139,92,246,0.09)", borderColor: "rgba(139,92,246,0.3)" }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-white/[0.07] text-[10px] font-mono text-white/25 hover:text-violet-300 transition-all"
+            title="Compare two models side-by-side"
+          >
+            <GitCompare size={11} />
+            <span className="hidden sm:inline">Compare</span>
+          </motion.button>
         </div>
 
         {/* Attachment chips */}
@@ -148,10 +147,8 @@ export function ChatInput() {
                 >
                   <Paperclip size={9} className="text-violet-400/60" />
                   <span className="max-w-[120px] truncate">{a.name}</span>
-                  <button
-                    onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
-                    className="text-white/30 hover:text-white/60 transition-colors"
-                  >
+                  <button onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
+                    className="text-white/30 hover:text-white/60 transition-colors">
                     <X size={9} />
                   </button>
                 </motion.div>
@@ -181,11 +178,7 @@ export function ChatInput() {
 
         {/* Input bar */}
         <motion.div
-          animate={{
-            borderColor: hasContent
-              ? "rgba(139,92,246,0.35)"
-              : "rgba(255,255,255,0.07)",
-          }}
+          animate={{ borderColor: hasContent ? "rgba(139,92,246,0.35)" : "rgba(255,255,255,0.07)" }}
           transition={{ duration: 0.2 }}
           className="flex items-end gap-2 bg-white/[0.02] border rounded-xl px-3 py-2.5 focus-within:shadow-[0_0_0_1px_rgba(139,92,246,0.12)] transition-shadow"
         >
@@ -196,7 +189,7 @@ export function ChatInput() {
             whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
             whileTap={{ scale: 0.92 }}
             className="p-1.5 rounded text-white/20 hover:text-white/55 transition-colors flex-shrink-0 mb-0.5"
-            title="Attach file (text, code, CSV — max 200KB)"
+            title="Attach file"
           >
             <Paperclip size={14} />
           </motion.button>
@@ -218,7 +211,7 @@ export function ChatInput() {
             onInput={handleInput}
             placeholder="Message NJIRLAH AI..."
             rows={1}
-            className="flex-1 bg-transparent text-sm text-white/85 placeholder-white/20 resize-none focus:outline-none leading-relaxed max-h-44 scrollbar-thin scrollbar-thumb-violet scrollbar-track-transparent font-sans"
+            className="flex-1 bg-transparent text-sm text-white/85 placeholder-white/20 resize-none focus:outline-none leading-relaxed max-h-44 scrollbar-thin font-sans"
           />
 
           {/* Voice button */}
@@ -230,7 +223,6 @@ export function ChatInput() {
               whileTap={{ scale: 0.92 }}
               animate={{ color: isListening ? "rgba(248,113,113,0.9)" : "rgba(255,255,255,0.2)" }}
               className="p-1.5 rounded transition-colors flex-shrink-0 mb-0.5"
-              title={isListening ? "Stop listening" : "Voice input"}
             >
               {isListening ? <MicOff size={14} /> : <Mic size={14} />}
             </motion.button>
@@ -242,24 +234,19 @@ export function ChatInput() {
             disabled={!hasContent && !isStreaming}
             whileHover={hasContent ? { scale: 1.05 } : {}}
             whileTap={hasContent ? { scale: 0.92 } : {}}
-            animate={{
-              backgroundColor: hasContent
-                ? "rgba(139,92,246,0.85)"
-                : "rgba(255,255,255,0.04)",
-            }}
+            animate={{ backgroundColor: hasContent ? "rgba(139,92,246,0.85)" : "rgba(255,255,255,0.04)" }}
             transition={{ duration: 0.2 }}
             className="p-2 rounded-lg flex-shrink-0 transition-all disabled:cursor-not-allowed mb-0.5"
           >
             <AnimatePresence mode="wait">
-              {isStreaming ? (
-                <motion.div key="loading" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
-                  <Loader2 size={14} className="text-white/60 animate-spin" />
-                </motion.div>
-              ) : (
-                <motion.div key="send" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
-                  <ArrowUp size={14} className={hasContent ? "text-white" : "text-white/20"} />
-                </motion.div>
-              )}
+              {isStreaming
+                ? <motion.div key="l" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
+                    <Loader2 size={14} className="text-white/60 animate-spin" />
+                  </motion.div>
+                : <motion.div key="s" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
+                    <ArrowUp size={14} className={hasContent ? "text-white" : "text-white/20"} />
+                  </motion.div>
+              }
             </AnimatePresence>
           </motion.button>
         </motion.div>
