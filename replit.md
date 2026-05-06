@@ -1,57 +1,63 @@
 # NJIRLAH AI
 
-A beautiful dark-themed AI chat interface supporting multiple providers (built-in GPT-5.4, Cloudflare Workers AI, OpenRouter BYOK) with streaming responses, compare mode, live code preview, and local API key encryption.
+An AI chat application with an extensive animation showcase featuring 50+ live interactive animation demos.
 
 ## Run & Operate
 
-- Frontend: `pnpm --filter @workspace/njirlah-ai run dev`
-- API Server: `pnpm --filter @workspace/api-server run dev`
-- Install: `pnpm install`
-- Typecheck: `pnpm run typecheck`
-
-Required env vars:
-- `AI_INTEGRATIONS_OPENAI_BASE_URL` — Replit AI proxy base URL (auto-provisioned)
-- `AI_INTEGRATIONS_OPENAI_API_KEY` — Replit AI proxy key (auto-provisioned)
-- `CLOUDFLARE_ACCOUNT_ID` — (optional) Cloudflare account ID for Workers AI
-- `CLOUDFLARE_API_TOKEN` — (optional) Cloudflare API token for Workers AI
+```bash
+# Start the app
+pnpm --filter @workspace/njirlah-ai run dev
+# (PORT=22978 BASE_PATH=/ are set automatically by the artifact workflow)
+```
 
 ## Stack
 
-- Frontend: React 19 + Vite 7 + TypeScript + Tailwind CSS v4 + wouter (routing)
-- UI: shadcn/ui + Radix primitives + framer-motion
-- State: Zustand (persisted) + TanStack Query
-- API Server: Express 5 + pino logging + esbuild
-- AI: OpenAI SDK via Replit AI Integrations proxy; OpenRouter and Cloudflare via fetch proxy
+- React 18 + Vite 7
+- Framer Motion (primary animation orchestrator)
+- Tailwind CSS v4 + tw-animate-css
+- Zustand (state management)
+- Radix UI primitives
+- react-markdown + react-syntax-highlighter (chat rendering)
+- TanStack Query
 
 ## Where things live
 
-- `artifacts/njirlah-ai/` — frontend React app
-- `artifacts/njirlah-ai/src/store/` — Zustand stores (chat, compare, api-key, appearance)
-- `artifacts/njirlah-ai/src/hooks/` — useChat, useCompareChat hooks
+- `artifacts/njirlah-ai/src/` — main source
+- `artifacts/njirlah-ai/src/App.tsx` — app entry; routes to AnimationsPage on `/animations`
+- `artifacts/njirlah-ai/src/pages/AnimationsPage.tsx` — animation showcase page
+- `artifacts/njirlah-ai/src/components/animations/` — 8 animation section components
 - `artifacts/njirlah-ai/src/components/chat/` — chat UI components
-- `artifacts/api-server/src/routes/` — Express API routes (chat.ts, status.ts, cloudflare.ts)
-- `lib/integrations-openai-ai-server/` — OpenAI SDK client wrapper
+- `artifacts/njirlah-ai/src/components/layout/` — sidebar, header, background
+- `artifacts/njirlah-ai/src/store/` — Zustand stores (chat, api-key, compare)
 
 ## Architecture decisions
 
-- All provider proxying done server-side (api-server) to avoid CORS and protect keys
-- OpenRouter API key is user-supplied (BYOK), passed via `x-api-key` header, never stored server-side
-- API keys stored in browser using AES-GCM encryption (`lib/encryption.ts`)
-- Cloudflare Workers AI falls back to a built-in model list if credentials aren't configured
-- `/api/status` pings all three providers and returns latency for the status badge
+- Animation showcase is a separate `/animations` route within the same SPA (no page reload)
+- All animations use Framer Motion as the primary orchestrator — GSAP/react-spring patterns are replicated using Framer Motion's spring physics for bundle efficiency
+- Dark-only design with neon accent palette (#9E9EFF purple, #8DF0CC mint)
+- Chat uses streaming token display with live tok/s counter
+- API calls go through a Vite proxy to localhost:8080 (api-server)
 
 ## Product
 
-- Multi-provider AI chat: NJIRLAH built-in (GPT-5.4, free), Cloudflare Workers AI (free), OpenRouter (BYOK)
-- Streaming SSE responses with markdown + syntax highlighting
-- Compare mode: side-by-side model comparison
-- Live Code Preview panel for HTML/TSX output
-- Custom instructions, export chat, appearance settings
-- API key management with local AES-GCM encryption
-- **Animation Showcase** (`/animations`) — 50+ live animation demos organized in 8 categories: Basic, Loaders, Text & Path, Interactive, Scroll, Cursor, iOS, Advanced. All powered by Framer Motion 12. Accessible via sidebar "Animation Showcase" link.
+- Full AI chat interface with model selector, custom instructions, API key management
+- Animation showcase: 50+ demos across 8 categories (Basic, Loaders, Text/Path, Interactive, Scroll, Cursor, iOS, Advanced)
+- Side-by-side model compare view
+- Dev panel for inspecting request/response metadata
+
+## User preferences
+
+- Animations must feel premium, smooth, and 60fps
+- Framer Motion is primary library; GSAP patterns emulated within it
+- Dark neon aesthetic (#05050A background, purple/mint accents)
 
 ## Gotchas
 
-- The vite config requires `PORT` and `BASE_PATH` env vars — set by the workflow automatically
-- The api-server workflow rebuilds on each start (esbuild) — takes ~300ms
-- Do NOT run `pnpm dev` at workspace root — no dev script there
+- PORT and BASE_PATH env vars required by vite.config.ts — set by artifact workflow automatically
+- The `@workspace/api-client-react` dep is a workspace package (codegen output) — must run codegen if OpenAPI spec changes
+- Duplicate `style` props on motion elements cause Vite warnings — always merge into one style object
+
+## Pointers
+
+- `.local/skills/react-vite/SKILL.md` — frontend build conventions
+- `.local/skills/design/SKILL.md` — design subagent delegation

@@ -48,7 +48,6 @@ function FloatingTargetDemo() {
       >
         <p className="text-xs text-center pointer-events-none" style={{ color: "rgba(255,255,255,0.3)" }}>Move cursor here</p>
         <motion.div
-          style={{ x: sx, y: sy }}
           animate={{ scale: active ? 1 : 0.6, opacity: active ? 1 : 0.4 }}
           transition={{ duration: 0.2 }}
           className="absolute w-10 h-10 rounded-full pointer-events-none"

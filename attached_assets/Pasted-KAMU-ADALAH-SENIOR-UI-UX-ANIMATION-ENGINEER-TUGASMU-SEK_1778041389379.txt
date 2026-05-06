@@ -1,0 +1,84 @@
+KAMU ADALAH SENIOR UI/UX ANIMATION ENGINEER. TUGASMU SEKARANG HANYA SATU: IMPLEMENTASIKAN **SELURUH ANIMASI** DI BAWAH INI KE APLIKASI NJIRLAH AI. TIDAK BOLEH ADA YANG TERLEWAT. KAMU HARUS MEMBUAT APLIKASI INI TERLIHAT SANGAT PREMIUM, SMOOTH, DAN LIVELY.
+
+---
+
+## 🎯 LIBRARY YANG DIGUNAKAN (WAJIB KOMBINASI)
+1. **Framer Motion** (untuk animasi React, layout, gesture, AnimatePresence, drag, dll)
+2. **GSAP** (untuk animasi kompleks: scroll trigger, timeline, morph, 3D)
+3. **react-spring** (untuk animasi berbasis fisika: parallax, follow pointer, spring halus)
+4. **react-transition-group** (untuk transisi mounting/unmounting CSS)
+5. **anime.js** (untuk animasi tambahan: path drawing, morph, fireworks kecil)
+
+---
+
+## 📜 DAFTAR ANIMASI WAJIB (IMPLEMENTASIKAN SATU PERSATU)
+
+### A. CSS & GESTURE (Framer Motion + Tailwind)
+1. **Spring CSS** – Setiap transisi tombol, modal, sidebar menggunakan spring physics (stiffness, damping).
+2. **Drag** – Sidebar bisa di-drag untuk collapse/expand.
+3. **Enter animation** – Semua komponen mount dengan fade+slide up (AnimatePresence).
+4. **Exit animation** – Komponen unmount dengan fade+scale down.
+5. **Gesture** – Card model bisa di-tap/double-tap untuk info detail.
+6. **HTML content animation** – Saat isi chat muncul, kata-kata muncul satu per satu dengan opacity.
+7. **Keyframes & Wildcards** – Gunakan keyframes CSS untuk animasi loop: floating unicorn di background, glow pulse.
+8. **Rotate** – Ikon refresh model saat fetching muter 360°.
+9. **Transition options** – Gunakan `transition={{ type: "spring", bounce: 0.3 }}` di semua tombol.
+10. **Spinning 3D cube** – Loading screen menampilkan kubus 3D berputar (CSS 3D transform atau Three.js ringan).
+11. **AnimatePresence modes** – Gunakan `mode="wait"` pada pergantian chat bubble.
+12. **Loading: Circle spinner** – Spinner lingkaran neon saat pertama load.
+13. **Loading: Jumping dots** – Indikator "AI sedang mengetik" dengan tiga titik melompat.
+14. **Loading ripple** – Efek ripple dari titik tengah saat klik tombol kirim.
+15. **Loading: Pulse dots** – dot berdenyut di header koneksi.
+16. **Follow pointer with spring** – Kursor custom? Tidak, tapi efek GLOW mengikuti posisi mouse di background Unicorn.Studio.
+17. **Layout animation** – Sidebar membesar/mengecil dengan layoutId.
+18. **Material Design: Ripple** – Efek ripple pada tombol dan list item riwayat chat.
+19. **Motion along a path** – Animasi unicorn kecil berjalan di sepanjang path di footer.
+20. **Parallax** – Background Unicorn.Studio bergerak lambat mengikuti scroll (pakai GSAP ScrollTrigger).
+21. **Path drawing** – Animasi garis neon mengelilingi logo NJIRLAH saat hover.
+22. **Split text** – Judul "NJIRLAH AI" di header animasi huruf per huruf muncul dengan stagger.
+23. **Tilt card** – Kartu model di selector miring mengikuti arah mouse.
+24. **Accordion** – Riwayat chat expand/collapse dengan animasi tinggi.
+25. **Fill text** – Teks tombol "Send" terisi warna neon dari kiri ke kanan saat hover.
+26. **Loading progress bar** – Progress bar linear di atas chat area saat streaming.
+27. **Scroll Direction: Hide Header** – Header mengecil/sembunyi saat scroll ke bawah (GSAP ScrollTrigger).
+28. **Cursor: Floating target** – Kursor custom bulat kecil mengikuti mouse dengan delay (spring).
+29. **Cursor trail** – Jejak partikel neon mengikuti kursor.
+30. **Cursor trail velocity** – Panjang jejak bergantung kecepatan mouse.
+31. **Hold to confirm** – Tombol "Hapus Chat" harus ditahan 2 detik dengan animasi progress melingkar.
+32. **Image reveal slider** – Tidak ada gambar, tapi bisa diterapkan pada transisi panel: overlay yang mengungkap konten.
+33. **Infinite loading** – Saat fetch model, indikator infinite scroll di dropdown.
+34. **iOS slider** – Model temperature slider bergaya iOS (draggable + spring).
+35. **Magnetic filings** – Chip provider dalam filter saling tarik magnetik saat mouse dekat (Framer Motion `useMotionValue` + `onMouseMove`).
+36. **Multi state badge** – Badge status (Online/Offline/Typing) dengan transisi antar state.
+37. **iOS Notifications stack** – Notifikasi toast bertumpuk dengan animasi swipe.
+38. **Path morphing** – Icon send berubah menjadi checkmark (morphSVG GSAP).
+39. **Smooth tabs** – Tab "Chat" dan "Models" dengan sliding indikator.
+40. **Tab select** – Animasi pop pada tab aktif.
+41. **Variants** – Gunakan variants Framer Motion untuk semua list animasi (container > child stagger).
+42. **Loading overlay** – Overlay glass dengan spinner saat ganti model pertama kali.
+43. **To-do list** – (skip, tidak relevan)
+44. **Scroll velocity: 3D planes** – Background unicorn bergerak dalam 3D berdasarkan scroll velocity.
+45. **Scroll Image Reveal** – Saat scroll ke bawah, section "About" menampilkan teks dengan efek reveal.
+46. **Scroll Zoom Hero** – Tidak ada hero image, tapi bisa efek zoom-in pada logo NJIRLAH saat halaman di-scroll.
+47. **iOS App Store Card stack** – Riwayat chat ditampilkan sebagai kartu bertumpuk (bisa diswipe).
+48. **Swipe actions** – Swipe ke kiri pada item riwayat untuk hapus.
+49. **Apple Intelligence ripple** – Lingkaran ripple warna-warni di sekitar avatar AI saat berpikir (seperti Siri).
+50. **Carousel: iOS exposure slider** – Pemilih model ditampilkan sebagai slider horizontal (iOS style).
+51. **iOS App Folder** – Group model berdasarkan provider muncul seperti folder iOS (zoom in/out).
+52. **Command Palette** – `Ctrl+K` memunculkan command palette dengan animasi scale+fade, search, dan navigasi smooth.
+
+---
+
+## 🎨 ATURAN WAJIB
+- Semua animasi harus terasa **smooth 60fps**, gunakan `will-change`, `transform`, dan `opacity` untuk performa.
+- Jangan gunakan animasi perpustakaan yang berat; kombinasikan library di atas dengan bijak.
+- Gunakan **Framer Motion** sebagai primary orchestrator, GSAP untuk scroll dan morph, react-spring untuk fisika pointer, anime.js untuk efek khusus.
+- Tidak boleh ada animasi yang patah-patah atau delay lebih dari 300ms tanpa indikator.
+- Setiap komponen harus memiliki enter/exit animation via `AnimatePresence`.
+
+---
+
+## 🔥 DELIVERABLES
+Buatkan **kode implementasi setiap animasi** yang bisa langsung diintegrasikan ke komponen NJIRLAH AI. Tulis dalam file terpisah (misal `animations.ts`, `components/AnimatedChatBubble.tsx`, `components/CursorTrail.tsx`, dll.) dan tunjukkan cara pemakaiannya. Jangan hanya sebutkan, tulis kodenya!
+
+**MULAI SEKARANG. KAMU TIDAK BOLEH GAGAL. NJIRLAH AI HARUS MENJADI APLIKASI DENGAN ANIMASI TERKEREN YANG PERNAH ADA.**

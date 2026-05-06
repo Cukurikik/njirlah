@@ -141,7 +141,6 @@ function ScrollVelocity3DDemo() {
           {planes.map((p) => (
             <motion.div
               key={p.label}
-              style={{ translateZ: p.z }}
               className="px-8 py-2 rounded-lg text-xs font-bold text-center"
               style={{ background: `${p.color}20`, border: `1px solid ${p.color}50`, color: p.color, translateZ: p.z }}
             >

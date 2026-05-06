@@ -44,7 +44,6 @@ function FollowPointerSpringDemo() {
         style={{ background: "rgba(0,0,0,0.3)", cursor: "none" }}
       >
         <motion.div
-          style={{ x, y }}
           className="absolute w-6 h-6 rounded-full pointer-events-none"
           style={{ background: "#9E9EFF", x, y, boxShadow: "0 0 12px #9E9EFF" }}
         />
