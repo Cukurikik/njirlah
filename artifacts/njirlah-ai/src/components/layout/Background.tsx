@@ -124,8 +124,8 @@ function CanvasBackground() {
 export function Background() {
   return (
     <>
-      <div className="fixed inset-0 z-0" style={{ background: "#05050A" }} />
-      <div className="fixed inset-0 z-0 dot-grid opacity-40" />
+      <div className="fixed inset-0 z-0 pointer-events-none" style={{ background: "#05050A" }} />
+      <div className="fixed inset-0 z-0 dot-grid opacity-40 pointer-events-none" />
       {UNICORN_PROJECT_ID ? <UnicornStudioBackground /> : <CanvasBackground />}
       <MouseGlow />
     </>

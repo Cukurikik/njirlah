@@ -48,7 +48,7 @@ export function ApiStatusBadge() {
   const globalColor = isError || anyDown ? "bg-red-400" : allOk ? "bg-green-400" : "bg-yellow-400";
 
   return (
-    <div className="relative font-bold">
+    <div className="relative">
       <motion.button
         onClick={() => setOpen(!open)}
         whileHover={{ backgroundColor: "rgba(255,255,255,0.04)" }}

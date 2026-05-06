@@ -20,7 +20,7 @@ export function Header({ onToggleDevPanel, devPanelOpen, onOpenMobileSidebar, on
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" as const }}
-      className="relative flex items-center gap-3 px-4 h-12 border-b border-white/[0.06] flex-shrink-0 overflow-hidden"
+      className="relative flex items-center gap-3 px-4 h-12 border-b border-white/[0.06] flex-shrink-0"
       style={{ background: "#05050A" }}
     >
       {/* Streaming progress bar at very top */}
