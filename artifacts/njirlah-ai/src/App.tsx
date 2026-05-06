@@ -14,6 +14,7 @@ import { ExportModal } from "@/components/chat/ExportModal";
 import { CustomInstructionsModal } from "@/components/chat/CustomInstructionsModal";
 import { SettingsModal } from "@/components/chat/SettingsModal";
 import { DevPanel } from "@/components/dev/DevPanel";
+import { AppearanceApplier } from "@/components/layout/AppearanceApplier";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 1000 * 60 * 5 } },
@@ -45,6 +46,7 @@ function AppInner() {
       className="relative flex h-screen w-screen overflow-hidden"
       style={{ background: "#05050A" }}
     >
+      <AppearanceApplier />
       <Background />
 
       <div className="relative z-10 flex w-full h-full">

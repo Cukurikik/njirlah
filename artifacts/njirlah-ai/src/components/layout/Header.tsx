@@ -1,6 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Activity, Code2, Menu, Settings } from "lucide-react";
-import { ModelSelector } from "@/components/chat/ModelSelector";
 import { useChatStore } from "@/store/chat-store";
 import { AILogo } from "@/components/ui/AILogo";
 import { GlitchText } from "@/components/ui/TypewriterText";
@@ -14,7 +13,7 @@ interface HeaderProps {
 }
 
 export function Header({ onToggleDevPanel, devPanelOpen, onOpenMobileSidebar, onOpenSettings }: HeaderProps) {
-  const { selectedProvider, isStreaming } = useChatStore();
+  const { isStreaming } = useChatStore();
 
   return (
     <motion.header
@@ -47,11 +46,10 @@ export function Header({ onToggleDevPanel, devPanelOpen, onOpenMobileSidebar, on
         />
       </motion.div>
 
-      <div className="w-px h-4 bg-white/[0.07] hidden sm:block" />
+      {/* Spacer */}
+      <div className="flex-1" />
 
-      <ModelSelector />
-
-      <div className="ml-auto flex items-center gap-2">
+      <div className="flex items-center gap-2">
         {/* API status */}
         <ApiStatusBadge />
 
@@ -72,35 +70,6 @@ export function Header({ onToggleDevPanel, devPanelOpen, onOpenMobileSidebar, on
             <span>Dev</span>
           </motion.button>
         )}
-
-        {/* Provider pill */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={selectedProvider}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.18 }}
-            className={`hidden sm:flex items-center gap-1.5 px-2 py-1 rounded border text-[9px] font-mono font-bold tracking-widest uppercase ${
-              selectedProvider === "cloudflare"
-                ? "border-violet-500/20 text-violet-400/60 bg-violet-500/[0.03]"
-                : selectedProvider === "replit"
-                ? "border-green-500/20 text-green-400/60 bg-green-500/[0.03]"
-                : "border-orange-500/20 text-orange-400/60 bg-orange-500/[0.03]"
-            }`}
-          >
-            <motion.span
-              className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                selectedProvider === "cloudflare" ? "bg-violet-400" :
-                selectedProvider === "replit" ? "bg-green-400" : "bg-orange-400"
-              }`}
-              animate={{ opacity: [0.6, 1, 0.6] }}
-              transition={{ duration: 1.8, repeat: Infinity }}
-            />
-            {selectedProvider === "cloudflare" ? "CF Workers" :
-             selectedProvider === "replit" ? "NJIRLAH AI" : "OpenRouter"}
-          </motion.div>
-        </AnimatePresence>
 
         {/* Settings */}
         <motion.button

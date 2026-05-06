@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUp, Loader2, Paperclip, Mic, MicOff, X } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
 import { useChat } from "@/hooks/useChat";
+import { ModelSelector } from "@/components/chat/ModelSelector";
 
 declare global {
   interface Window {
@@ -118,10 +119,17 @@ export function ChatInput() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.1 }}
-      className="px-4 pb-4 pt-3 border-t border-white/[0.06] flex-shrink-0"
+      className="px-4 pb-4 pt-2 border-t border-white/[0.06] flex-shrink-0"
       style={{ background: "#05050A" }}
     >
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto space-y-2">
+
+        {/* ── Model selector row ── */}
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[10px] text-white/15 font-mono tracking-widest uppercase">Model</span>
+          <ModelSelector />
+        </div>
+
         {/* Attachment chips */}
         <AnimatePresence>
           {attachments.length > 0 && (
@@ -129,7 +137,7 @@ export function ChatInput() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="flex flex-wrap gap-1.5 mb-2 overflow-hidden"
+              className="flex flex-wrap gap-1.5 overflow-hidden"
             >
               {attachments.map((a, i) => (
                 <motion.div
@@ -159,7 +167,7 @@ export function ChatInput() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-md bg-red-500/[0.06] border border-red-500/20"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-red-500/[0.06] border border-red-500/20"
             >
               <motion.div
                 className="w-2 h-2 rounded-full bg-red-400"
@@ -171,6 +179,7 @@ export function ChatInput() {
           )}
         </AnimatePresence>
 
+        {/* Input bar */}
         <motion.div
           animate={{
             borderColor: hasContent
@@ -178,7 +187,7 @@ export function ChatInput() {
               : "rgba(255,255,255,0.07)",
           }}
           transition={{ duration: 0.2 }}
-          className="flex items-end gap-2 bg-white/[0.02] border rounded-lg px-3 py-2.5 focus-within:shadow-[0_0_0_1px_rgba(139,92,246,0.15)] transition-shadow"
+          className="flex items-end gap-2 bg-white/[0.02] border rounded-xl px-3 py-2.5 focus-within:shadow-[0_0_0_1px_rgba(139,92,246,0.12)] transition-shadow"
         >
           {/* Attachment button */}
           <motion.button
@@ -187,7 +196,7 @@ export function ChatInput() {
             whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
             whileTap={{ scale: 0.92 }}
             className="p-1.5 rounded text-white/20 hover:text-white/55 transition-colors flex-shrink-0 mb-0.5"
-            title="Attach file (text, code, CSV, PDF — max 200KB)"
+            title="Attach file (text, code, CSV — max 200KB)"
           >
             <Paperclip size={14} />
           </motion.button>
@@ -239,7 +248,7 @@ export function ChatInput() {
                 : "rgba(255,255,255,0.04)",
             }}
             transition={{ duration: 0.2 }}
-            className="p-2 rounded-md flex-shrink-0 transition-all disabled:cursor-not-allowed mb-0.5"
+            className="p-2 rounded-lg flex-shrink-0 transition-all disabled:cursor-not-allowed mb-0.5"
           >
             <AnimatePresence mode="wait">
               {isStreaming ? (
@@ -259,9 +268,9 @@ export function ChatInput() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-[10px] text-white/15 text-center mt-2 font-mono tracking-wide"
+          className="text-[10px] text-white/15 text-center font-mono tracking-wide"
         >
-          Enter ↵ send · Shift+Enter new line · 📎 attach files · 🎤 voice input
+          Enter ↵ send · Shift+Enter new line · 📎 attach · 🎤 voice
         </motion.p>
       </div>
     </motion.div>

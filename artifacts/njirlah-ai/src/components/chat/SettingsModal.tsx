@@ -1,10 +1,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Settings2, Trash2, ShieldCheck, Database, Lock,
-  Eye, EyeOff, FileX, Globe, Keyboard, Palette, Info,
+  Eye, EyeOff, FileX, Globe, Info, Palette,
 } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
-import { useState, useEffect } from "react";
+import { useAppearanceStore, type AccentColor, type Density } from "@/store/appearance-store";
+import { useState } from "react";
 
 interface SettingsModalProps {
   open: boolean;
@@ -13,36 +14,35 @@ interface SettingsModalProps {
 
 type Section = "general" | "appearance" | "privacy";
 
-const ACCENT_OPTIONS = [
-  { key: "violet", label: "Violet",  color: "#7c3aed", bg: "bg-violet-500",  ring: "border-violet-500/60", text: "text-violet-400" },
-  { key: "blue",   label: "Blue",    color: "#2563eb", bg: "bg-blue-500",    ring: "border-blue-500/60",   text: "text-blue-400" },
-  { key: "cyan",   label: "Cyan",    color: "#0891b2", bg: "bg-cyan-500",    ring: "border-cyan-500/60",   text: "text-cyan-400" },
-  { key: "emerald",label: "Emerald", color: "#059669", bg: "bg-emerald-500", ring: "border-emerald-500/60",text: "text-emerald-400" },
-  { key: "rose",   label: "Rose",    color: "#e11d48", bg: "bg-rose-500",    ring: "border-rose-500/60",   text: "text-rose-400" },
-  { key: "amber",  label: "Amber",   color: "#d97706", bg: "bg-amber-500",   ring: "border-amber-500/60",  text: "text-amber-400" },
+const ACCENT_OPTIONS: { key: AccentColor; label: string; dot: string; active: string }[] = [
+  { key: "violet",  label: "Violet",  dot: "#7c3aed", active: "border-violet-500/60  text-violet-300  bg-violet-500/10" },
+  { key: "blue",    label: "Blue",    dot: "#2563eb", active: "border-blue-500/60    text-blue-300    bg-blue-500/10" },
+  { key: "cyan",    label: "Cyan",    dot: "#0891b2", active: "border-cyan-500/60    text-cyan-300    bg-cyan-500/10" },
+  { key: "emerald", label: "Emerald", dot: "#059669", active: "border-emerald-500/60 text-emerald-300 bg-emerald-500/10" },
+  { key: "rose",    label: "Rose",    dot: "#e11d48", active: "border-rose-500/60    text-rose-300    bg-rose-500/10" },
+  { key: "amber",   label: "Amber",   dot: "#d97706", active: "border-amber-500/60   text-amber-300   bg-amber-500/10" },
 ];
 
-const DENSITY_OPTIONS = [
-  { key: "compact",  label: "Compact",  desc: "Tighter spacing, more content" },
+const DENSITY_OPTIONS: { key: Density; label: string; desc: string }[] = [
+  { key: "compact",  label: "Compact",  desc: "Tighter spacing · more content visible" },
   { key: "default",  label: "Default",  desc: "Balanced layout" },
-  { key: "relaxed",  label: "Relaxed",  desc: "More breathing room" },
+  { key: "relaxed",  label: "Relaxed",  desc: "Spacious · easier to read" },
+];
+
+const NAV: { id: Section; icon: React.ReactNode; label: string }[] = [
+  { id: "general",    icon: <Settings2 size={12} />,   label: "General" },
+  { id: "appearance", icon: <Palette size={12} />,     label: "Appearance" },
+  { id: "privacy",    icon: <ShieldCheck size={12} />, label: "Privacy & Data" },
 ];
 
 export function SettingsModal({ open, onClose }: SettingsModalProps) {
   const { chats, clearAllChats } = useChatStore();
+  const { accent, density, setAccent, setDensity } = useAppearanceStore();
   const [section, setSection] = useState<Section>("general");
   const [confirmClear, setConfirmClear] = useState(false);
-  const [accent, setAccent] = useState(() => localStorage.getItem("njirlah-accent") ?? "violet");
-  const [density, setDensity] = useState(() => localStorage.getItem("njirlah-density") ?? "default");
   const [cleared, setCleared] = useState(false);
 
-  useEffect(() => {
-    localStorage.setItem("njirlah-accent", accent);
-  }, [accent]);
-
-  useEffect(() => {
-    localStorage.setItem("njirlah-density", density);
-  }, [density]);
+  const totalMessages = chats.reduce((sum, c) => sum + c.messages.length, 0);
 
   const handleClearAll = () => {
     if (!confirmClear) { setConfirmClear(true); return; }
@@ -51,14 +51,6 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
     setCleared(true);
     setTimeout(() => { setCleared(false); onClose(); }, 1200);
   };
-
-  const totalMessages = chats.reduce((sum, c) => sum + c.messages.length, 0);
-
-  const NAV: { id: Section; icon: React.ReactNode; label: string }[] = [
-    { id: "general",    icon: <Settings2 size={12} />,  label: "General" },
-    { id: "appearance", icon: <Palette size={12} />,    label: "Appearance" },
-    { id: "privacy",    icon: <ShieldCheck size={12} />, label: "Privacy & Data" },
-  ];
 
   return (
     <AnimatePresence>
@@ -88,10 +80,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                 <h2 className="text-sm font-semibold text-white/85">Settings</h2>
                 <p className="text-[10px] text-white/25 font-mono mt-0.5">NJIRLAH AI · Preferences</p>
               </div>
-              <button
-                onClick={onClose}
-                className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/[0.04] transition-colors"
-              >
+              <button onClick={onClose} className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/[0.04] transition-colors">
                 <X size={14} />
               </button>
             </div>
@@ -123,7 +112,6 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                   <>
                     <div className="space-y-2">
                       <h3 className="text-[10px] font-mono text-white/25 tracking-widest uppercase">Chat History</h3>
-
                       <div className="grid grid-cols-2 gap-2">
                         <div className="flex flex-col gap-1 px-3 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                           <span className="text-[10px] text-white/25 font-mono">Conversations</span>
@@ -142,19 +130,12 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
 
                       <AnimatePresence mode="wait">
                         {cleared ? (
-                          <motion.div
-                            key="cleared"
-                            initial={{ opacity: 0, y: 4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0 }}
-                            className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-green-500/25 text-green-400 bg-green-500/[0.05] text-sm"
-                          >
+                          <motion.div key="cleared" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                            className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-green-500/25 text-green-400 bg-green-500/[0.05] text-sm">
                             ✓ All chat history cleared
                           </motion.div>
                         ) : (
-                          <motion.button
-                            key="clear-btn"
-                            onClick={handleClearAll}
+                          <motion.button key="clear-btn" onClick={handleClearAll}
                             whileHover={{ backgroundColor: confirmClear ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.02)" }}
                             whileTap={{ scale: 0.97 }}
                             className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[12px] transition-all text-left ${
@@ -164,20 +145,15 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                             }`}
                           >
                             <Trash2 size={12} />
-                            {confirmClear
-                              ? "Click again to confirm — cannot be undone"
-                              : "Clear all chat history"}
+                            {confirmClear ? "Click again to confirm — cannot be undone" : "Clear all chat history"}
                           </motion.button>
                         )}
                       </AnimatePresence>
 
                       {confirmClear && !cleared && (
-                        <motion.button
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
+                        <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                           onClick={() => setConfirmClear(false)}
-                          className="text-[10px] text-white/20 font-mono hover:text-white/45 transition-colors"
-                        >
+                          className="text-[10px] text-white/20 font-mono hover:text-white/45 transition-colors">
                           ← cancel
                         </motion.button>
                       )}
@@ -201,13 +177,13 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <h3 className="text-[10px] font-mono text-white/25 tracking-widest uppercase">About</h3>
+                    <div className="space-y-1">
+                      <h3 className="text-[10px] font-mono text-white/25 tracking-widest uppercase mb-2">About</h3>
                       <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/[0.015] border border-white/[0.04]">
                         <Info size={11} className="text-white/20" />
                         <div>
                           <p className="text-[11px] text-white/40 font-mono">NJIRLAH AI · v1.0.0</p>
-                          <p className="text-[10px] text-white/20 font-mono">Built with React, Vite, Tailwind CSS</p>
+                          <p className="text-[10px] text-white/20 font-mono">React · Vite · Tailwind CSS 4 · Framer Motion</p>
                         </div>
                       </div>
                     </div>
@@ -219,6 +195,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                   <>
                     <div className="space-y-2">
                       <h3 className="text-[10px] font-mono text-white/25 tracking-widest uppercase">Accent Color</h3>
+                      <p className="text-[10px] text-white/20 font-mono px-0.5">Changes instantly — affects buttons, borders, highlights and the typing indicator.</p>
                       <div className="grid grid-cols-3 gap-2">
                         {ACCENT_OPTIONS.map((a) => (
                           <motion.button
@@ -228,16 +205,16 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                             whileTap={{ scale: 0.96 }}
                             className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-mono transition-all ${
                               accent === a.key
-                                ? `${a.ring} ${a.text} bg-white/[0.04]`
+                                ? a.active
                                 : "border-white/[0.06] text-white/30 hover:text-white/55 hover:border-white/[0.1]"
                             }`}
                           >
-                            <span className={`w-3 h-3 rounded-full flex-shrink-0 ${a.bg}`} />
+                            <span className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-white/10" style={{ backgroundColor: a.dot }} />
                             {a.label}
+                            {accent === a.key && <span className="ml-auto text-[8px]">✓</span>}
                           </motion.button>
                         ))}
                       </div>
-                      <p className="text-[10px] text-white/20 font-mono px-0.5">Saved automatically · takes effect on next launch</p>
                     </div>
 
                     <div className="space-y-2">
@@ -254,7 +231,10 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                                 : "border-white/[0.06] text-white/35 hover:text-white/60 hover:border-white/[0.1]"
                             }`}
                           >
-                            <span className="text-[12px] font-medium">{d.label}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[12px] font-medium">{d.label}</span>
+                              {density === d.key && <span className="text-[9px] font-mono text-violet-400/70">active</span>}
+                            </div>
                             <span className="text-[10px] font-mono text-white/20">{d.desc}</span>
                           </motion.button>
                         ))}
@@ -280,41 +260,23 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                         <span className="text-[12px] font-semibold text-green-300">Privacy-first by design</span>
                       </div>
                       <p className="text-[11px] text-white/35 leading-relaxed font-mono">
-                        NJIRLAH AI is built so that your data never leaves your device. No account required. No data collection. No telemetry.
+                        NJIRLAH AI is built so your data never leaves your device. No account required. No data collection. No telemetry.
                       </p>
                     </div>
 
                     <div className="space-y-2">
                       <h3 className="text-[10px] font-mono text-white/25 tracking-widest uppercase">What We Store</h3>
                       {[
-                        {
-                          icon: <Lock size={12} className="text-violet-400 flex-shrink-0" />,
-                          title: "API Keys",
-                          desc: "Encrypted with AES-GCM in your browser's localStorage. Never transmitted to our servers.",
-                          status: "Local only",
-                          statusColor: "text-green-400 border-green-500/20",
-                        },
-                        {
-                          icon: <Database size={12} className="text-blue-400 flex-shrink-0" />,
-                          title: "Chat History",
-                          desc: "Persisted in localStorage via Zustand. Fully private — we have zero access to your conversations.",
-                          status: "Local only",
-                          statusColor: "text-green-400 border-green-500/20",
-                        },
-                        {
-                          icon: <Palette size={12} className="text-amber-400 flex-shrink-0" />,
-                          title: "Preferences",
-                          desc: "Theme, accent color, density settings stored locally in localStorage.",
-                          status: "Local only",
-                          statusColor: "text-green-400 border-green-500/20",
-                        },
+                        { icon: <Lock size={12} className="text-violet-400" />, title: "API Keys", desc: "Encrypted with AES-GCM in your browser's localStorage. Never transmitted anywhere.", status: "Local only" },
+                        { icon: <Database size={12} className="text-blue-400" />, title: "Chat History", desc: "Persisted in localStorage via Zustand persist. We have zero access to your conversations.", status: "Local only" },
+                        { icon: <Palette size={12} className="text-amber-400" />, title: "Preferences", desc: "Theme, accent, density settings stored in localStorage.", status: "Local only" },
                       ].map((item) => (
                         <div key={item.title} className="flex gap-3 px-3 py-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                          <div className="mt-0.5">{item.icon}</div>
+                          <div className="mt-0.5 flex-shrink-0">{item.icon}</div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-0.5">
                               <p className="text-[12px] font-medium text-white/65">{item.title}</p>
-                              <span className={`text-[9px] font-mono font-bold border px-1.5 py-0.5 rounded flex-shrink-0 ${item.statusColor}`}>{item.status}</span>
+                              <span className="text-[9px] font-mono font-bold border border-green-500/20 text-green-400/60 px-1.5 py-0.5 rounded flex-shrink-0">{item.status}</span>
                             </div>
                             <p className="text-[10px] text-white/25 leading-relaxed">{item.desc}</p>
                           </div>
@@ -326,9 +288,9 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                       <h3 className="text-[10px] font-mono text-white/25 tracking-widest uppercase">What We Don't Do</h3>
                       {[
                         { icon: <EyeOff size={11} className="text-red-400/70" />, text: "We do not log, read, or analyze your messages" },
-                        { icon: <Globe size={11} className="text-red-400/70" />,  text: "We do not send your prompts to any analytics service" },
-                        { icon: <FileX size={11} className="text-red-400/70" />,  text: "We do not train AI models on your conversations" },
-                        { icon: <Eye size={11} className="text-red-400/70" />,    text: "We have no backend database of users or conversations" },
+                        { icon: <Globe size={11} className="text-red-400/70" />,   text: "We do not send prompts to any analytics service" },
+                        { icon: <FileX size={11} className="text-red-400/70" />,   text: "We do not train AI models on your conversations" },
+                        { icon: <Eye size={11} className="text-red-400/70" />,     text: "We have no backend database of users or conversations" },
                       ].map((item, i) => (
                         <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/[0.015] border border-white/[0.04]">
                           {item.icon}
@@ -341,26 +303,18 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                       <h3 className="text-[10px] font-mono text-white/25 tracking-widest uppercase">Third-Party Providers</h3>
                       <div className="px-3 py-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                         <p className="text-[11px] text-white/30 leading-relaxed">
-                          When you send a message, it goes directly from your browser to the AI provider you selected (OpenAI, Anthropic, Cloudflare, OpenRouter, etc.). Each provider has their own privacy policy. NJIRLAH AI acts only as a client — we are never in the middle of that connection.
+                          Messages go directly from your browser to the AI provider you selected (OpenAI, Anthropic, Cloudflare, OpenRouter). Each provider has their own privacy policy. NJIRLAH AI is only a client — we are never in the middle of that connection.
                         </p>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/[0.04]">
-                      <Trash2 size={11} className="text-white/20" />
-                      <p className="text-[10px] text-white/25 font-mono">
-                        To delete all data: go to General → Clear all chat history, then clear your browser's localStorage.
-                      </p>
-                    </div>
                   </div>
                 )}
-
               </div>
             </div>
 
             {/* Footer */}
             <div className="px-5 py-3 border-t border-white/[0.05] flex items-center justify-between flex-shrink-0">
-              <p className="text-[10px] text-white/15 font-mono">NJIRLAH AI · All data stays on your device</p>
+              <p className="text-[10px] text-white/15 font-mono">All data stays on your device</p>
               <motion.button
                 onClick={onClose}
                 whileHover={{ backgroundColor: "rgba(124,58,237,0.08)" }}
