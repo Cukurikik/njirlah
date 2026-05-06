@@ -1,0 +1,126 @@
+KAMU ADALAH SENIOR UI/UX DEVELOPER. TUGASMU SEKARANG HANYA SATU: MEMBANGUN **HALAMAN APP PREVIEW** UNTUK NJIRLAH AI DENGAN GAYA **EMERGENT.SH**. FOKUS PADA TATA LETAK, KOMPONEN VISUAL, DAN INTERAKSI. TIDAK BOLEH MEMBUAT BACKEND, API, ATAU LOGIKA AI.
+
+---
+
+## 1. KONSEP DESAIN: "Integrated Development View"
+Tata letak dua panel yang menampilkan alur kerja agen AI (kiri) dan pratinjau aplikasi langsung (kanan). Pengalaman harus terasa mulus, profesional, dan developer‑friendly.
+
+---
+
+## 2. STRUKTUR HALAMAN (WAJIB)
+
+### Panel Kiri: Alur Kerja Agen (Agent Workflow Panel)
+Lebar 40% layar, background `bg-gray-950` atau `bg-[#0a0a10]`.
+
+#### 2.1 Header Panel
+- Judul: "Agent Workflow" dengan font Space Grotesk, ukuran 18px, warna putih.
+- Di bawah judul: indikator status proyek "Building NJIRLAH AI..." dengan pulsing dot hijau.
+
+#### 2.2 Step List (Terstruktur)
+Setiap langkah pembangunan ditampilkan sebagai kartu dengan:
+- **Indikator status**: 
+  - ✅ (Checkmark hijau dengan animasi draw) = Selesai
+  - 🔄 (Spinner berputar) = Sedang Berjalan
+  - ⏳ (Jam pasir berdetak) = Menunggu
+  - ❌ (Silang merah) = Gagal
+- **Nama langkah**: teks putih tebal (misal: "Step 1: Inisialisasi Proyek Next.js")
+- **Deskripsi singkat**: teks abu‑abu kecil (misal: "Membuat struktur folder dan package.json")
+- **File yang diedit**: tautan teks biru dengan ikon file (misal: `📄 App.js`, `📄 package.json`). Hover: underline.
+- **Waktu eksekusi**: di kanan (misal: "2.3s")
+
+Setiap kartu langkah memiliki:
+- Background: `bg-white/5` dengan border `border-white/10`.
+- Padding: 16px.
+- Margin bottom: 8px.
+- Animasi masuk: fade + slide dari kiri (Framer Motion stagger 0.1s).
+
+#### 2.3 Input Chat Area (Bawah Panel)
+- Input field transparan dengan placeholder: "Ask the Agent about the next step..."
+- Border: `border border-white/20`, rounded: 12px.
+- Di dalam input: ikon kirim (send) di kanan, berwarna biru neon.
+- Tombol tambahan di bawah input:
+  - **"View Proposed Plan"** – tombol outline (border putih, teks putih), hover: bg putih/10.
+  - **"Save"** – tombol solid biru (`bg-blue-600`), hover: lebih terang.
+  - **"Fork"** – tombol outline abu‑abu.
+- Ketiga tombol sejajar horizontal dengan gap 8px.
+
+---
+
+### Panel Kanan: App Preview (Live Preview Panel)
+Lebar 60% layar, background `bg-[#0d0d15]`.
+
+#### 3.1 Browser Frame Simulasi
+Bingkai pratinjau menyerupai jendela browser:
+- **Simulated URL Bar** di atas:
+  - Background: `bg-[#1a1a2e]` dengan border‑bottom `border-gray-700`.
+  - Di dalamnya: ikon gembok hijau 🔒, teks `localhost:3000/intro` (font mono, 13px, warna abu‑abu terang).
+  - Tombol navigasi: panah kiri/kanan, refresh (ikon kecil di kiri).
+  - Tombol titik (macOS style): merah, kuning, hijau di kiri atas (hanya dekoratif).
+- **Viewport Area**:
+  - Menampilkan pratinjau NJIRLAH AI dalam iframe atau komponen yang dirender.
+  - Background pratinjau: `bg-white` atau sesuai aplikasi.
+  - Border: `border border-gray-800`, rounded‑bottom: 12px.
+
+#### 3.2 Device Simulator Controls (Kanan Atas Viewport)
+Tiga tombol ikon di pojok kanan atas bingkai:
+- **Desktop** (ikon monitor) – aktif: `bg-blue-600`, tidak aktif: transparan.
+- **Tablet** (ikon tablet) – aktif: `bg-blue-600`.
+- **Mobile** (ikon smartphone) – aktif: `bg-blue-600`.
+Klik salah satu: mengubah lebar viewport dengan transisi animasi (Framer Motion `layout`):
+  - Desktop: 100%
+  - Tablet: 768px (tengah, dengan border tambahan)
+  - Mobile: 375px (tengah, dengan border tambahan)
+
+#### 3.3 Toolbar Kanan Atas (di luar bingkai, di atas viewport)
+Tiga tombol:
+- **Refresh** – ikon 🔄, memutar 360° saat diklik.
+- **Share** – ikon 📤.
+- **Deploy to Production** – tombol solid hijau (`bg-green-600`), teks putih, bold, rounded: 8px, padding: 8px 16px. Hover: glow hijau (`shadow-lg shadow-green-500/50`).
+
+---
+
+## 4. DETAIL INTERAKSI & ANIMASI (WAJIB)
+Gunakan **Framer Motion** untuk semua animasi:
+
+- **Step list**: masuk dengan `staggerChildren: 0.1`, setiap item dari opacity 0, x: -20 → opacity 1, x: 0.
+- **Status ikon selesai**: animasi path drawing (checkmark digambar selama 0.5s).
+- **Status sedang berjalan**: spinner berputar infinite.
+- **Hover pada file link**: scale 1.02, transisi 0.2s.
+- **Tombol "Deploy to Production"**: pulse animation (scale 1 → 1.05 → 1, berulang setiap 2s).
+- **Pergantian mode device**: viewport berubah lebar dengan `layout` animation Framer Motion (smooth, spring).
+- **URL bar**: teks `localhost:3000` bisa diklik untuk memilih rute lain.
+- **Tombol Refresh**: rotasi 360° saat diklik, durasi 0.6s.
+
+---
+
+## 5. TEMA & WARNA (WAJIB)
+- **Background utama**: `bg-[#0a0a10]`
+- **Panel kiri**: `bg-[#0d0d18]`
+- **Panel kanan**: `bg-[#0d0d15]`
+- **Aksen biru**: `#3B82F6` (biru terang)
+- **Teks utama**: putih (`text-white`)
+- **Teks sekunder**: abu‑abu (`text-gray-400`)
+- **Border**: `border-gray-800` atau `border-white/10`
+- **Font**: Inter untuk body, Space Grotesk untuk judul.
+
+---
+
+## 6. RESPONSIVE DESIGN
+- Pada layar di bawah 1024px, panel kanan (preview) berpindah ke bawah panel kiri (stacked vertikal).
+- Pada mobile (< 768px): hanya tampilkan satu panel dalam satu waktu, dengan toggle tab "Workflow" / "Preview" di atas.
+
+---
+
+## 7. KOMPONEN YANG HARUS DIBUAT
+1. `AgentWorkflowPanel.tsx` – panel kiri dengan step list dan input chat.
+2. `AppPreviewPanel.tsx` – panel kanan dengan bingkai browser dan kontrol.
+3. `DeviceSimulator.tsx` – tombol desktop/tablet/mobile dengan logika resize.
+4. `StepItem.tsx` – kartu langkah individual dengan status indikator.
+5. `BrowserFrame.tsx` – bingkai browser simulasi dengan URL bar dan viewport.
+6. `AppPreviewPage.tsx` – halaman utama yang menggabungkan kedua panel.
+
+Semua komponen harus menggunakan Tailwind CSS dan Framer Motion.
+
+---
+
+**MULAI SEKARANG. BUAT HALAMAN APP PREVIEW NJIRLAH AI DENGAN GAYA EMERGENT.SH. HASILKAN KODE LENGKAP, SIAP COPY‑PASTE, DAN TERLIHAT SANGAT PROFESIONAL.**

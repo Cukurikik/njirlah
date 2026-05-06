@@ -20,6 +20,7 @@ import { CompareView } from "@/components/compare/CompareView";
 import { CursorTrail } from "@/components/layout/CursorTrail";
 import { CommandPalette } from "@/components/layout/CommandPalette";
 import AnimationsPage from "@/pages/AnimationsPage";
+import AppPreviewPage from "@/pages/AppPreviewPage";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 1000 * 60 * 5 } },
@@ -134,8 +135,9 @@ function AppInner() {
 }
 
 function AppRouter() {
-  const isAnimations = window.location.pathname.endsWith("/animations");
-  if (isAnimations) return <AnimationsPage />;
+  const path = window.location.pathname;
+  if (path.endsWith("/animations")) return <AnimationsPage />;
+  if (path.endsWith("/preview")) return <AppPreviewPage />;
   return <AppInner />;
 }
 
