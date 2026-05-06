@@ -14,47 +14,41 @@ interface ChatBubbleProps {
 }
 
 export function TypingIndicator() {
-  const bars = [6, 14, 10, 18, 8, 14, 6];
+  const bars = [4, 10, 7, 14, 5, 11, 4];
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -4 }}
-      transition={{ duration: 0.22 }}
-      className="flex items-center gap-3 mb-4"
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="flex items-center gap-3 mb-8"
     >
-      <div className="w-7 h-7 rounded-md border border-violet-500/25 bg-gradient-to-br from-violet-600/10 to-blue-600/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-        <AIIcon size={16} />
+      <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.15), rgba(168,85,247,0.08))", border: "1px solid rgba(139,92,246,0.2)" }}>
+        <AIIcon size={15} />
       </div>
-      <div
-        className="flex items-center gap-[3px] px-4 rounded-xl border border-violet-500/15 bg-gradient-to-r from-violet-500/[0.05] to-blue-500/[0.02]"
-        style={{ height: "36px" }}
-      >
+      <div className="flex items-center gap-[3px] px-4 rounded-2xl border border-violet-500/10 bg-violet-500/[0.04]" style={{ height: "36px" }}>
         {bars.map((maxH, i) => (
           <motion.span
             key={i}
-            className="block w-[3px] rounded-full"
-            style={{ background: "linear-gradient(to top, rgba(124,58,237,0.5), rgba(167,139,250,0.95))", minHeight: "3px" }}
-            animate={{
-              height: [`${Math.max(3, maxH * 0.28)}px`, `${maxH}px`, `${Math.max(3, maxH * 0.28)}px`],
-              opacity: [0.25, 1, 0.25],
-            }}
-            transition={{ duration: 0.85, repeat: Infinity, delay: i * 0.09, ease: [0.4, 0, 0.6, 1] }}
+            className="block w-[2.5px] rounded-full bg-violet-400/70"
+            animate={{ height: [`${Math.max(2, maxH * 0.25)}px`, `${maxH}px`, `${Math.max(2, maxH * 0.25)}px`], opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.08, ease: "easeInOut" }}
           />
         ))}
       </div>
-      <span className="text-[10px] text-white/15 font-mono tracking-wide">generating</span>
     </motion.div>
   );
 }
 
 export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) {
   const [copied, setCopied] = useState(false);
+  const [liked, setLikedState] = useState<boolean | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(message.content);
   const editRef = useRef<HTMLTextAreaElement>(null);
 
-  /* Token speed tracking */
+  /* Token tracking */
   const streamStartRef = useRef<number | null>(null);
   const [tokensPerSec, setTokensPerSec] = useState(0);
   const [totalTokens, setTotalTokens] = useState(0);
@@ -72,13 +66,10 @@ export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) 
       setTotalTokens(approx);
       if (elapsed > 0.3) setTokensPerSec(Math.round(approx / elapsed));
     }
-
     if (!isUser && !message.isStreaming && streamStartRef.current) {
       const elapsed = (Date.now() - streamStartRef.current) / 1000;
       const approx = Math.floor(message.content.length / 4);
-      if (elapsed > 0.3 && approx > 0) {
-        setFinalSpeed({ tps: Math.round(approx / elapsed), total: approx });
-      }
+      if (elapsed > 0.3 && approx > 0) setFinalSpeed({ tps: Math.round(approx / elapsed), total: approx });
       streamStartRef.current = null;
       setTokensPerSec(0);
       setTotalTokens(0);
@@ -99,8 +90,10 @@ export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) 
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleLike = (liked: boolean) => {
-    updateMessage(chatId, message.id, { liked: message.liked === liked ? null : liked });
+  const handleLike = (val: boolean) => {
+    const next = liked === val ? null : val;
+    setLikedState(next);
+    updateMessage(chatId, message.id, { liked: next });
   };
 
   const handleEditStart = () => { setEditValue(message.content); setIsEditing(true); };
@@ -121,89 +114,96 @@ export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) 
 
   if (message.isStreaming && !message.content) return <TypingIndicator />;
 
+  /* ── User message ── */
+  if (isUser) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
+        className="flex justify-end mb-6 group"
+      >
+        <div className="max-w-[75%]">
+          {isEditing ? (
+            <div className="space-y-2">
+              <textarea
+                ref={editRef}
+                value={editValue}
+                onChange={(e) => { setEditValue(e.target.value); e.target.style.height = "auto"; e.target.style.height = `${e.target.scrollHeight}px`; }}
+                onKeyDown={handleEditKeyDown}
+                className="w-full bg-white/[0.04] border border-violet-500/25 rounded-2xl px-4 py-3 text-sm text-white/85 resize-none focus:outline-none focus:border-violet-500/45 leading-relaxed transition-colors scrollbar-thin"
+                style={{ minHeight: "72px", fontFamily: "inherit" }}
+              />
+              <div className="flex items-center gap-2 justify-end">
+                <button onClick={handleEditCancel}
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-mono text-white/35 hover:text-white/60 border border-white/[0.06] hover:border-white/[0.1] transition-all">
+                  Cancel
+                </button>
+                <button onClick={handleEditConfirm}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-mono font-medium bg-violet-600/80 hover:bg-violet-500/80 text-white transition-colors">
+                  <CornerDownRight size={10} /> Re-send
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-end gap-2">
+              {/* Edit btn */}
+              <motion.button
+                onClick={handleEditStart}
+                initial={{ opacity: 0 }}
+                whileHover={{ scale: 1.1 }}
+                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-white/20 hover:text-white/55 transition-all flex-shrink-0 mb-1"
+              >
+                <Pencil size={11} />
+              </motion.button>
+              <div
+                className="px-4 py-3 rounded-2xl rounded-br-md text-sm text-white/90 leading-relaxed whitespace-pre-wrap break-words"
+                style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.18), rgba(139,92,246,0.1))", border: "1px solid rgba(139,92,246,0.2)" }}
+              >
+                {message.content}
+              </div>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
+
+  /* ── AI message ── */
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: "easeOut" as const, delay: Math.min(index * 0.02, 0.2) }}
-      className={`chat-bubble flex items-start gap-3 mb-6 group ${isUser ? "flex-row-reverse" : "flex-row"}`}
+      transition={{ duration: 0.25, ease: "easeOut", delay: Math.min(index * 0.015, 0.1) }}
+      className="flex items-start gap-3 mb-8 group"
     >
       {/* Avatar */}
       <div className="relative flex-shrink-0 mt-0.5">
-        {/* Apple Intelligence ring on AI avatar */}
-        {!isUser && message.isStreaming && (
+        {message.isStreaming && (
           <motion.div
-            className="absolute -inset-[3px] rounded-md pointer-events-none"
-            style={{
-              background: "conic-gradient(from var(--angle), #7C3AED, #9E9EFF, #06B6D4, #EC4899, #7C3AED)",
-              borderRadius: "8px",
-            }}
-            animate={{ "--angle": ["0deg", "360deg"] } as any}
+            className="absolute -inset-[2px] rounded-xl pointer-events-none"
+            style={{ background: "conic-gradient(from var(--a, 0deg), #7c3aed, #a855f7, #22d3ee, #ec4899, #7c3aed)", borderRadius: "12px" }}
+            animate={{ "--a": ["0deg", "360deg"] } as Record<string, string>}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
           />
         )}
-        <div className={`relative w-6 h-6 rounded border flex items-center justify-center overflow-hidden ${
-          isUser ? "border-violet-500/25 bg-violet-500/[0.08]" : "border-white/[0.07] bg-[#0a0a0a]"
-        }`}>
-          {isUser
-            ? <span className="text-[10px] font-bold text-violet-300 font-mono">U</span>
-            : <AIIcon size={16} />
-          }
+        <div className="relative w-7 h-7 rounded-xl flex items-center justify-center overflow-hidden"
+          style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.15), rgba(168,85,247,0.08))", border: "1px solid rgba(139,92,246,0.2)" }}>
+          <AIIcon size={15} />
         </div>
       </div>
 
-      <div className={`flex-1 min-w-0 flex flex-col gap-1.5 ${isUser ? "items-end" : "items-start"}`}>
-        <span className="text-[10px] text-white/20 font-mono tracking-wide px-0.5">
-          {isUser ? "you" : "njirlah ai"}
-        </span>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-mono text-white/20 mb-2 tracking-wide">NJIRLAH AI</p>
 
-        {/* Edit mode */}
-        {isEditing ? (
-          <div className="max-w-[85%] w-full space-y-2">
-            <textarea
-              ref={editRef}
-              value={editValue}
-              onChange={(e) => { setEditValue(e.target.value); e.target.style.height = "auto"; e.target.style.height = `${e.target.scrollHeight}px`; }}
-              onKeyDown={handleEditKeyDown}
-              className="w-full bg-violet-500/[0.06] border border-violet-500/30 rounded-lg px-4 py-2.5 text-sm text-white/85 resize-none focus:outline-none leading-relaxed focus:border-violet-500/50 transition-colors scrollbar-thin font-sans"
-              style={{ minHeight: "72px" }}
-            />
-            <div className="flex items-center gap-1.5 justify-end">
-              <motion.button onClick={handleEditCancel} whileHover={{ backgroundColor: "rgba(255,255,255,0.04)" }} whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded text-[11px] text-white/35 hover:text-white/60 font-mono border border-transparent hover:border-white/[0.07] transition-all">
-                <X size={10} /> Cancel
-              </motion.button>
-              <motion.button onClick={handleEditConfirm} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-1 px-3 py-1 rounded text-[11px] font-mono font-medium bg-violet-500/80 hover:bg-violet-500/90 text-white transition-colors">
-                <CornerDownRight size={10} /> Re-send
-              </motion.button>
-            </div>
-          </div>
-        ) : (
-          <div className={`chat-bubble-body max-w-[85%] rounded-lg text-sm leading-relaxed ${
-            isUser
-              ? "bg-violet-500/[0.09] border border-violet-500/20 text-white/90 rounded-tr-sm px-4 py-2.5"
-              : "w-full bg-white/[0.02] border border-white/[0.06] text-white/80 rounded-tl-sm px-4 py-3"
-          }`}>
-            {isUser ? (
-              <span className="whitespace-pre-wrap break-words">{message.content}</span>
-            ) : (
-              <MarkdownContent content={message.content} isStreaming={message.isStreaming} />
-            )}
-          </div>
-        )}
+        <div className="text-sm text-white/80 leading-relaxed">
+          <MarkdownContent content={message.content} isStreaming={message.isStreaming} />
+        </div>
 
-        {/* Live token speed badge — shows while streaming */}
-        {!isUser && message.isStreaming && message.content && tokensPerSec > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-1.5 text-[10px] font-mono text-white/25"
-          >
-            <motion.div
-              animate={{ opacity: [0.4, 1, 0.4] }}
-              transition={{ duration: 0.7, repeat: Infinity }}
-            >
+        {/* Token speed — while streaming */}
+        {message.isStreaming && message.content && tokensPerSec > 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-1.5 mt-2 text-[10px] font-mono text-white/20">
+            <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.8, repeat: Infinity }}>
               <Zap size={9} className="text-violet-400/60" />
             </motion.div>
             <span>{tokensPerSec} tok/s</span>
@@ -212,68 +212,57 @@ export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) 
           </motion.div>
         )}
 
-        {/* Final speed badge — shown after streaming ends */}
-        {!isUser && !message.isStreaming && finalSpeed && finalSpeed.tps > 0 && message.content && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-1.5 text-[10px] font-mono text-white/15"
-          >
+        {/* Final speed */}
+        {!message.isStreaming && finalSpeed && finalSpeed.tps > 0 && message.content && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-1.5 mt-2 text-[10px] font-mono text-white/15">
             <Zap size={9} className="text-white/15" />
-            <span>{finalSpeed.tps} tok/s</span>
-            <span className="text-white/10">·</span>
-            <span>{finalSpeed.total} tokens</span>
+            <span>{finalSpeed.tps} tok/s · {finalSpeed.total} tokens</span>
           </motion.div>
         )}
 
-        {/* AI action toolbar — always visible */}
-        {!isUser && !message.isStreaming && message.content && (
-          <div className="flex items-center gap-0.5 mt-0.5">
-            <motion.button whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.06)" }} whileTap={{ scale: 0.9 }}
-              onClick={handleCopy} title="Copy response"
-              className="p-1.5 rounded text-white/20 hover:text-white/55 transition-colors">
-              {copied ? <Check size={11} className="text-green-400" /> : <Copy size={11} />}
+        {/* Action toolbar */}
+        {!message.isStreaming && message.content && (
+          <div className="flex items-center gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+            <motion.button
+              onClick={handleCopy}
+              whileHover={{ scale: 1.08, backgroundColor: "rgba(255,255,255,0.06)" }}
+              whileTap={{ scale: 0.9 }}
+              className="p-1.5 rounded-lg text-white/25 hover:text-white/65 transition-colors"
+              title="Copy"
+            >
+              {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
             </motion.button>
 
             {isLast && (
               <motion.button
-                whileHover={{ scale: 1.05, backgroundColor: "rgba(124,58,237,0.12)" }}
-                whileTap={{ scale: 0.9 }}
                 onClick={regenerate}
-                title="Regenerate response"
-                className="flex items-center gap-1 px-2 py-1 rounded border border-violet-500/20 text-violet-400/70 hover:text-violet-300 hover:border-violet-500/40 transition-all text-[10px] font-mono"
+                whileHover={{ scale: 1.04, backgroundColor: "rgba(139,92,246,0.1)" }}
+                whileTap={{ scale: 0.9 }}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-white/[0.07] text-white/30 hover:text-violet-300 hover:border-violet-500/25 transition-all text-[10px] font-mono"
               >
                 <RefreshCw size={10} />
-                <span>Regenerate</span>
+                Regenerate
               </motion.button>
             )}
 
-            <motion.button whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.05)" }} whileTap={{ scale: 0.9 }}
-              onClick={() => handleLike(true)} title="Good response"
-              className={`p-1.5 rounded transition-colors ${message.liked === true ? "text-green-400" : "text-white/20 hover:text-white/55"}`}>
-              <ThumbsUp size={11} />
+            <motion.button
+              onClick={() => handleLike(true)}
+              whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.05)" }}
+              whileTap={{ scale: 0.9 }}
+              className={`p-1.5 rounded-lg transition-colors ${liked === true ? "text-green-400" : "text-white/25 hover:text-white/55"}`}
+            >
+              <ThumbsUp size={12} />
             </motion.button>
 
-            <motion.button whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.05)" }} whileTap={{ scale: 0.9 }}
-              onClick={() => handleLike(false)} title="Bad response"
-              className={`p-1.5 rounded transition-colors ${message.liked === false ? "text-red-400" : "text-white/20 hover:text-white/55"}`}>
-              <ThumbsDown size={11} />
+            <motion.button
+              onClick={() => handleLike(false)}
+              whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.05)" }}
+              whileTap={{ scale: 0.9 }}
+              className={`p-1.5 rounded-lg transition-colors ${liked === false ? "text-red-400" : "text-white/25 hover:text-white/55"}`}
+            >
+              <ThumbsDown size={12} />
             </motion.button>
           </div>
-        )}
-
-        {/* User edit button */}
-        {isUser && !message.isStreaming && !isEditing && (
-          <motion.button
-            onClick={handleEditStart}
-            initial={{ opacity: 0 }}
-            whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.05)" }}
-            whileTap={{ scale: 0.92 }}
-            className="opacity-0 group-hover:opacity-100 p-1.5 rounded text-white/20 hover:text-white/55 transition-all"
-            title="Edit and re-send"
-          >
-            <Pencil size={11} />
-          </motion.button>
         )}
       </div>
     </motion.div>

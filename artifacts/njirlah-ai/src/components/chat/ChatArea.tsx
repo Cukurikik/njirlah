@@ -1,133 +1,124 @@
-import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useChatStore } from "@/store/chat-store";
 import { useChat } from "@/hooks/useChat";
 import { ChatBubble, TypingIndicator } from "./ChatBubble";
-import { HeroBrandText } from "@/components/ui/TypewriterText";
-import { AILogo } from "@/components/ui/AILogo";
-import {
-  OpenAILogo, CloudflareLogo, MistralLogo, AnthropicLogo,
-  LlamaLogo, GoogleGemmaLogo, DeepSeekLogo, XAILogo,
-} from "@/components/ui/AIProviderLogos";
-import { Sparkles, ShieldCheck, Zap, Layers } from "lucide-react";
+import { Zap, ArrowRight } from "lucide-react";
+import { useDevModeStore } from "@/store/dev-mode-store";
 
-const BENTO_FEATURES = [
-  {
-    logo: <OpenAILogo size={18} />,
-    logoColor: "text-white",
-    title: "NJIRLAH AI Built-in",
-    desc: "GPT-5.4 streaming, no API key required",
-    badge: "FREE",
-    badgeColor: "text-green-400/80 border-green-500/20 bg-green-500/[0.05]",
-    bg: "hover:border-green-500/20",
-  },
-  {
-    logo: <CloudflareLogo size={18} />,
-    logoColor: "text-orange-400",
-    title: "Cloudflare Workers AI",
-    desc: "12+ open-source models on global edge",
-    badge: "FREE",
-    badgeColor: "text-orange-400/80 border-orange-500/20 bg-orange-500/[0.05]",
-    bg: "hover:border-orange-500/20",
-  },
-  {
-    logo: <span className="flex items-center gap-0.5"><AnthropicLogo size={14} /><MistralLogo size={14} /><LlamaLogo size={14} /></span>,
-    logoColor: "text-violet-400",
-    title: "OpenRouter BYOK",
-    desc: "200+ models — Claude, Mistral, Llama & more",
-    badge: "BYOK",
-    badgeColor: "text-violet-400/80 border-violet-500/20 bg-violet-500/[0.05]",
-    bg: "hover:border-violet-500/20",
-  },
-  {
-    logo: <span className="flex items-center gap-0.5"><GoogleGemmaLogo size={14} /><DeepSeekLogo size={14} /><XAILogo size={14} /></span>,
-    logoColor: "text-blue-400",
-    title: "Live Code Preview",
-    desc: "Tailwind + shadcn/ui, element selection",
-    badge: "DEV",
-    badgeColor: "text-blue-400/80 border-blue-500/20 bg-blue-500/[0.05]",
-    bg: "hover:border-blue-500/20",
-  },
-];
-
-const VALUE_PROPS = [
-  {
-    icon: <Zap size={12} />,
-    color: "text-green-400",
-    bg: "bg-green-500/[0.06] border-green-500/15",
-    title: "Free GPT-5.4, no key needed",
-    desc: "Start instantly — no signup, no credit card.",
-  },
-  {
-    icon: <ShieldCheck size={12} />,
-    color: "text-violet-400",
-    bg: "bg-violet-500/[0.06] border-violet-500/15",
-    title: "Your keys stay on your device",
-    desc: "AES-GCM encrypted locally. We never see them.",
-  },
-  {
-    icon: <Layers size={12} />,
-    color: "text-cyan-400",
-    bg: "bg-cyan-500/[0.06] border-cyan-500/15",
-    title: "One UI, 200+ models",
-    desc: "Switch Cloudflare ↔ OpenRouter ↔ Built-in instantly.",
-  },
-];
-
-const PROMPTS = [
-  { lang: "html", text: "Build a responsive dashboard with Tailwind CSS and shadcn/ui components" },
-  { lang: "tsx",  text: "Create a React TypeScript data table with sorting, filtering, and pagination" },
-  { lang: "py",   text: "Write a FastAPI REST backend with JWT auth and PostgreSQL via SQLAlchemy" },
-  { lang: "sql",  text: "Design a PostgreSQL schema for a SaaS app with multi-tenancy and RLS" },
-];
-
-const LANG_COLORS: Record<string, string> = {
-  html: "text-rose-400/70 border-rose-500/15 bg-rose-500/[0.04]",
-  tsx:  "text-cyan-400/70 border-cyan-500/15 bg-cyan-500/[0.04]",
-  py:   "text-green-400/70 border-green-500/15 bg-green-500/[0.04]",
-  sql:  "text-sky-400/70 border-sky-500/15 bg-sky-500/[0.04]",
+const PROMPT_SETS = {
+  website: [
+    { tag: "React",   text: "Build a responsive dashboard with Tailwind CSS and shadcn/ui" },
+    { tag: "Next.js", text: "Create a landing page with animated hero section and pricing table" },
+    { tag: "HTML",    text: "Build a portfolio site with dark mode and smooth scroll animations" },
+    { tag: "Vue",     text: "Create an e-commerce product page with cart functionality" },
+  ],
+  mobile: [
+    { tag: "Expo",    text: "Build a React Native onboarding flow with animated slides" },
+    { tag: "RN",      text: "Create a social feed app with infinite scroll and like animations" },
+    { tag: "Flutter", text: "Build a fitness tracker app with charts and workout history" },
+    { tag: "Expo",    text: "Create a camera app with filters and gallery view" },
+  ],
+  fullstack: [
+    { tag: "Next.js", text: "Build a SaaS starter with auth, Prisma ORM, and Stripe payments" },
+    { tag: "FastAPI", text: "Create a REST API with JWT auth, PostgreSQL, and auto docs" },
+    { tag: "T3",      text: "Build a full-stack todo app with tRPC, Drizzle, and Clerk auth" },
+    { tag: "Node",    text: "Create a real-time chat app with Socket.io and Redis" },
+  ],
 };
 
-/* 3-D tilt card hook */
-function TiltCard({ children, className }: { children: React.ReactNode; className?: string }) {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotX = useSpring(useTransform(y, [-0.5, 0.5], [8, -8]), { stiffness: 200, damping: 20 });
-  const rotY = useSpring(useTransform(x, [-0.5, 0.5], [-8, 8]), { stiffness: 200, damping: 20 });
+const TAG_COLORS: Record<string, string> = {
+  "React":   "text-cyan-400/70 border-cyan-500/15",
+  "Next.js": "text-white/50 border-white/10",
+  "HTML":    "text-orange-400/70 border-orange-500/15",
+  "Vue":     "text-green-400/70 border-green-500/15",
+  "Expo":    "text-violet-400/70 border-violet-500/15",
+  "RN":      "text-blue-400/70 border-blue-500/15",
+  "Flutter": "text-sky-400/70 border-sky-500/15",
+  "FastAPI": "text-emerald-400/70 border-emerald-500/15",
+  "T3":      "text-pink-400/70 border-pink-500/15",
+  "Node":    "text-green-400/70 border-green-500/15",
+};
 
-  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    x.set((e.clientX - r.left) / r.width - 0.5);
-    y.set((e.clientY - r.top) / r.height - 0.5);
-  };
-  const handleLeave = () => { x.set(0); y.set(0); };
+const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } };
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
+};
+
+function EmptyState() {
+  const { sendMessage } = useChat();
+  const { activeMode } = useDevModeStore();
+  const prompts = PROMPT_SETS[activeMode];
 
   return (
-    <motion.div
-      onMouseMove={handleMove}
-      onMouseLeave={handleLeave}
-      style={{ rotateX: rotX, rotateY: rotY, transformStyle: "preserve-3d" }}
-      className={className}
-    >
-      {children}
-    </motion.div>
+    <div className="flex-1 flex items-center justify-center p-8 overflow-y-auto">
+      <motion.div
+        variants={stagger}
+        initial="hidden"
+        animate="visible"
+        className="w-full max-w-2xl"
+      >
+        {/* Logo mark */}
+        <motion.div variants={fadeUp} className="flex flex-col items-center mb-10">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 160, damping: 18 }}
+            className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5"
+            style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.15), rgba(168,85,247,0.08))", border: "1px solid rgba(139,92,246,0.2)" }}
+          >
+            <Zap size={20} className="text-violet-400" />
+          </motion.div>
+          <h2 className="text-2xl font-bold text-white/85 mb-2 tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            What are we building?
+          </h2>
+          <p className="text-sm text-white/35 text-center max-w-xs leading-relaxed">
+            Describe your idea and NJIRLAH AI will generate production-ready code instantly.
+          </p>
+        </motion.div>
+
+        {/* Suggestions */}
+        <motion.div variants={fadeUp} className="space-y-2">
+          <p className="text-[10px] font-mono text-white/20 tracking-[0.2em] uppercase px-1 mb-3">Suggested prompts</p>
+          {prompts.map((p) => (
+            <motion.button
+              key={p.text}
+              onClick={() => sendMessage(p.text)}
+              whileHover={{ x: 4, backgroundColor: "rgba(255,255,255,0.025)", borderColor: "rgba(255,255,255,0.08)" }}
+              whileTap={{ scale: 0.99 }}
+              className="w-full text-left px-4 py-3.5 rounded-xl border border-white/[0.05] text-sm text-white/45 hover:text-white/75 transition-all flex items-center gap-3 group"
+            >
+              <span className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded border flex-shrink-0 ${TAG_COLORS[p.tag] ?? "text-white/35 border-white/10"}`}>
+                {p.tag}
+              </span>
+              <span className="flex-1 leading-relaxed">{p.text}</span>
+              <ArrowRight size={12} className="text-white/15 group-hover:text-white/40 flex-shrink-0 transition-colors" />
+            </motion.button>
+          ))}
+        </motion.div>
+
+        {/* Hint */}
+        <motion.div variants={fadeUp} className="mt-8 flex items-center justify-center gap-6">
+          {[
+            { label: "Free GPT-5.4 built-in", dot: "bg-green-400" },
+            { label: "200+ models with BYOK", dot: "bg-violet-400" },
+            { label: "All code stays local", dot: "bg-blue-400" },
+          ].map((h) => (
+            <div key={h.label} className="flex items-center gap-1.5 text-[11px] text-white/25">
+              <span className={`w-1.5 h-1.5 rounded-full ${h.dot}`} />
+              {h.label}
+            </div>
+          ))}
+        </motion.div>
+      </motion.div>
+    </div>
   );
 }
-
-const container = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.06 } },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } },
-};
 
 export function ChatArea() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const { getActiveChat, isStreaming } = useChatStore();
-  const { sendMessage } = useChat();
   const chat = getActiveChat();
   const messages = chat?.messages ?? [];
 
@@ -136,93 +127,12 @@ export function ChatArea() {
   }, [messages.length, isStreaming]);
 
   if (!chat || messages.length === 0) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-violet scrollbar-track-transparent">
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="visible"
-          className="w-full max-w-2xl"
-        >
-          {/* Hero */}
-          <motion.div variants={item} className="text-center mb-6">
-            <motion.div
-              initial={{ scale: 0.7, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 160, damping: 18, delay: 0.05 }}
-              className="inline-flex items-center justify-center w-14 h-14 rounded-2xl border border-violet-500/20 bg-violet-500/[0.04] mb-5"
-            >
-              <AILogo size={40} animated />
-            </motion.div>
-            <HeroBrandText />
-          </motion.div>
-
-          {/* Value proposition — why NJIRLAH vs ChatGPT/Claude */}
-          <motion.div variants={item} className="grid grid-cols-3 gap-2 mb-5">
-            {VALUE_PROPS.map((v) => (
-              <div
-                key={v.title}
-                className={`flex flex-col gap-1.5 p-3 rounded-lg border ${v.bg} cursor-default`}
-              >
-                <span className={`${v.color} flex-shrink-0`}>{v.icon}</span>
-                <p className="text-[11px] font-semibold text-white/70 leading-tight">{v.title}</p>
-                <p className="text-[10px] text-white/30 leading-relaxed">{v.desc}</p>
-              </div>
-            ))}
-          </motion.div>
-
-          {/* Provider bento grid — 3D tilt cards */}
-          <motion.div variants={item} className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4" style={{ perspective: 800 }}>
-            {BENTO_FEATURES.map((f) => (
-              <TiltCard key={f.title} className={`relative p-3 rounded-lg border border-white/[0.06] bg-white/[0.01] cursor-default transition-colors ${f.bg}`}>
-                <motion.div
-                  whileHover={{ backgroundColor: "rgba(255,255,255,0.022)" }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute inset-0 rounded-lg pointer-events-none"
-                />
-                <div className="flex items-start justify-between mb-2">
-                  <span className={f.logoColor}>{f.logo}</span>
-                  <span className={`text-[9px] font-bold tracking-widest font-mono border px-1.5 py-0.5 rounded ${f.badgeColor}`}>
-                    {f.badge}
-                  </span>
-                </div>
-                <p className="text-[11px] font-semibold text-white/65 mb-0.5 leading-tight">{f.title}</p>
-                <p className="text-[10px] text-white/25 leading-relaxed">{f.desc}</p>
-              </TiltCard>
-            ))}
-          </motion.div>
-
-          {/* Prompt suggestions */}
-          <motion.div variants={item}>
-            <p className="text-[9px] text-white/15 font-mono tracking-[0.18em] uppercase mb-2 px-0.5">
-              Try asking
-            </p>
-            <div className="space-y-1">
-              {PROMPTS.map((p) => (
-                <motion.button
-                  key={p.text}
-                  onClick={() => sendMessage(p.text)}
-                  whileHover={{ x: 3, backgroundColor: "rgba(255,255,255,0.025)" }}
-                  whileTap={{ scale: 0.99 }}
-                  className="w-full text-left px-3.5 py-2.5 rounded-lg border border-white/[0.05] hover:border-white/[0.09] text-xs text-white/35 hover:text-white/60 transition-all flex items-center gap-3 group"
-                >
-                  <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border flex-shrink-0 ${LANG_COLORS[p.lang] ?? "text-white/40 border-white/10"}`}>
-                    {p.lang.toUpperCase()}
-                  </span>
-                  <span className="flex-1">{p.text}</span>
-                  <Sparkles size={11} className="text-violet-400/20 group-hover:text-violet-400/50 flex-shrink-0 transition-colors" />
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-        </motion.div>
-      </div>
-    );
+    return <EmptyState />;
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-6 scrollbar-thin scrollbar-thumb-violet scrollbar-track-transparent">
-      <div className="max-w-3xl mx-auto">
+    <div className="flex-1 overflow-y-auto py-8 scrollbar-thin scrollbar-thumb-white/5 scrollbar-track-transparent">
+      <div className="max-w-3xl mx-auto px-6">
         <AnimatePresence initial={false}>
           {messages.map((msg, i) => (
             <ChatBubble
