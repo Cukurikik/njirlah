@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { Activity, Code2, Menu, Settings } from "lucide-react";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { Activity, Code2, Menu, Settings, Command } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
 import { AILogo } from "@/components/ui/AILogo";
 import { GlitchText } from "@/components/ui/TypewriterText";
@@ -20,9 +20,22 @@ export function Header({ onToggleDevPanel, devPanelOpen, onOpenMobileSidebar, on
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" as const }}
-      className="flex items-center gap-3 px-4 h-12 border-b border-white/[0.06] flex-shrink-0"
+      className="relative flex items-center gap-3 px-4 h-12 border-b border-white/[0.06] flex-shrink-0 overflow-hidden"
       style={{ background: "#05050A" }}
     >
+      {/* Streaming progress bar at very top */}
+      <AnimatePresence>
+        {isStreaming && (
+          <motion.div
+            initial={{ scaleX: 0, opacity: 0 }}
+            animate={{ scaleX: 1, opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 2.5, ease: "easeInOut" }}
+            className="absolute top-0 left-0 right-0 h-[2px] origin-left"
+            style={{ background: "linear-gradient(90deg, #7C3AED, #9E9EFF, #7C3AED)", backgroundSize: "200% 100%" }}
+          />
+        )}
+      </AnimatePresence>
       {/* Mobile hamburger */}
       <motion.button
         onClick={onOpenMobileSidebar}
@@ -70,6 +83,18 @@ export function Header({ onToggleDevPanel, devPanelOpen, onOpenMobileSidebar, on
             <span>Dev</span>
           </motion.button>
         )}
+
+        {/* ⌘K hint */}
+        <motion.button
+          whileHover={{ backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)" }}
+          whileTap={{ scale: 0.94 }}
+          onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }))}
+          className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded border border-white/[0.06] text-[10px] font-mono text-white/20 hover:text-white/45 transition-all"
+          title="Open command palette (⌘K)"
+        >
+          <Command size={10} />
+          <span>K</span>
+        </motion.button>
 
         {/* Settings */}
         <motion.button

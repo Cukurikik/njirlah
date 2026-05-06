@@ -1,6 +1,36 @@
 import { useEffect, useRef } from "react";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 
 const UNICORN_PROJECT_ID = import.meta.env.VITE_UNICORN_STUDIO_PROJECT_ID as string | undefined;
+
+function MouseGlow() {
+  const x = useMotionValue(typeof window !== "undefined" ? window.innerWidth / 2 : 0);
+  const y = useMotionValue(typeof window !== "undefined" ? window.innerHeight / 2 : 0);
+  const sx = useSpring(x, { stiffness: 55, damping: 26 });
+  const sy = useSpring(y, { stiffness: 55, damping: 26 });
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { x.set(e.clientX); y.set(e.clientY); };
+    window.addEventListener("mousemove", handler);
+    return () => window.removeEventListener("mousemove", handler);
+  }, [x, y]);
+
+  return (
+    <motion.div
+      className="fixed pointer-events-none z-[1]"
+      style={{
+        left: sx,
+        top: sy,
+        x: "-50%",
+        y: "-50%",
+        width: 720,
+        height: 720,
+        borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(139,92,246,0.06) 0%, rgba(99,60,220,0.02) 45%, transparent 70%)",
+      }}
+    />
+  );
+}
 
 function UnicornStudioBackground() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,6 +127,7 @@ export function Background() {
       <div className="fixed inset-0 z-0" style={{ background: "#05050A" }} />
       <div className="fixed inset-0 z-0 dot-grid opacity-40" />
       {UNICORN_PROJECT_ID ? <UnicornStudioBackground /> : <CanvasBackground />}
+      <MouseGlow />
     </>
   );
 }

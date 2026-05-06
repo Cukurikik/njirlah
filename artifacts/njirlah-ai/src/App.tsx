@@ -17,6 +17,8 @@ import { SettingsModal } from "@/components/chat/SettingsModal";
 import { DevPanel } from "@/components/dev/DevPanel";
 import { AppearanceApplier } from "@/components/layout/AppearanceApplier";
 import { CompareView } from "@/components/compare/CompareView";
+import { CursorTrail } from "@/components/layout/CursorTrail";
+import { CommandPalette } from "@/components/layout/CommandPalette";
 import AnimationsPage from "@/pages/AnimationsPage";
 
 const queryClient = new QueryClient({
@@ -42,6 +44,19 @@ function AppInner() {
   useEffect(() => { loadKey(); }, [loadKey]);
   useEffect(() => { if (chats.length === 0) createChat(); }, []);
 
+  const handlePaletteAction = (action: string) => {
+    switch (action) {
+      case "new-chat": createChat(); break;
+      case "compare": setCompareActive(true); break;
+      case "export": setExportModalOpen(true); break;
+      case "animations": window.history.pushState({}, "", "/animations"); window.location.reload(); break;
+      case "api-key": setApiKeyModalOpen(true); break;
+      case "settings": setSettingsOpen(true); break;
+      case "instructions": setCustomInstructionsOpen(true); break;
+      case "dev-panel": setDevPanelOpen((v) => !v); break;
+    }
+  };
+
   return (
     <motion.div
       variants={pageVariants}
@@ -51,6 +66,8 @@ function AppInner() {
       style={{ background: "#05050A" }}
     >
       <AppearanceApplier />
+      <CursorTrail />
+      <CommandPalette onAction={handlePaletteAction} />
       <Background />
 
       <div className="relative z-10 flex w-full h-full">

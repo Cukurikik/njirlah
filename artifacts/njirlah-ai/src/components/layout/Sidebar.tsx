@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
 import { Plus, MessageSquare, Trash2, PanelLeftClose, PanelLeft, Key, LogOut, Download, Search, SlidersHorizontal, X } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
 import { useApiKeyStore } from "@/store/api-key-store";
@@ -23,6 +23,49 @@ const itemVariants = {
   }),
   exit: { opacity: 0, x: -10, transition: { duration: 0.12 } },
 };
+
+function NewChatButton({ collapsed, onClick }: { collapsed: boolean; onClick: () => void }) {
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const sx = useSpring(mx, { stiffness: 300, damping: 22 });
+  const sy = useSpring(my, { stiffness: 300, damping: 22 });
+
+  const handleMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    mx.set((e.clientX - r.left - r.width / 2) * 0.3);
+    my.set((e.clientY - r.top - r.height / 2) * 0.3);
+  };
+  const handleLeave = () => { mx.set(0); my.set(0); };
+
+  return (
+    <motion.button
+      onClick={onClick}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      style={{ x: sx, y: sy }}
+      whileHover={{ backgroundColor: "rgba(139,92,246,0.07)", borderColor: "rgba(139,92,246,0.25)" }}
+      whileTap={{ scale: 0.95 }}
+      className={`w-full flex items-center border border-white/[0.06] rounded-md px-2.5 py-2 transition-all group ${collapsed ? "justify-center" : "gap-2.5"}`}
+    >
+      <motion.div whileHover={{ rotate: 90 }} transition={{ duration: 0.2 }}>
+        <Plus size={13} className="text-violet-400/70 group-hover:text-violet-400 flex-shrink-0 transition-colors" />
+      </motion.div>
+      <AnimatePresence>
+        {!collapsed && (
+          <motion.span
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: "auto" }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: 0.15 }}
+            className="text-[11px] font-medium text-white/40 group-hover:text-white/70 whitespace-nowrap overflow-hidden transition-colors"
+          >
+            New Chat
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </motion.button>
+  );
+}
 
 export function Sidebar({ onOpenApiKey, onExport, onOpenCustomInstructions, mobileOpen, onMobileClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
@@ -83,31 +126,9 @@ export function Sidebar({ onOpenApiKey, onExport, onOpenCustomInstructions, mobi
         </div>
       </div>
 
-      {/* New Chat */}
+      {/* New Chat — magnetic button */}
       <div className="px-2 py-2 border-b border-white/[0.05]">
-        <motion.button
-          onClick={() => { createChat(); onMobileClose?.(); }}
-          whileHover={{ backgroundColor: "rgba(139,92,246,0.07)", borderColor: "rgba(139,92,246,0.25)" }}
-          whileTap={{ scale: 0.97 }}
-          className={`w-full flex items-center border border-white/[0.06] rounded-md px-2.5 py-2 transition-all group ${collapsed ? "justify-center" : "gap-2.5"}`}
-        >
-          <motion.div whileHover={{ rotate: 90 }} transition={{ duration: 0.18 }}>
-            <Plus size={13} className="text-violet-400/70 group-hover:text-violet-400 flex-shrink-0 transition-colors" />
-          </motion.div>
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.15 }}
-                className="text-[11px] font-medium text-white/40 group-hover:text-white/70 whitespace-nowrap overflow-hidden transition-colors"
-              >
-                New Chat
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
+        <NewChatButton collapsed={collapsed} onClick={() => { createChat(); onMobileClose?.(); }} />
       </div>
 
       {/* Search */}

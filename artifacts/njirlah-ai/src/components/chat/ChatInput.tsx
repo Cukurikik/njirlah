@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUp, Loader2, Paperclip, Mic, MicOff, X, GitCompare } from "lucide-react";
+import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
+import { ArrowUp, Loader2, Paperclip, Mic, MicOff, X, GitCompare, Check } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
 import { useChat } from "@/hooks/useChat";
 import { ModelSelector } from "@/components/chat/ModelSelector";
@@ -101,6 +101,37 @@ export function ChatInput({ onOpenCompare }: ChatInputProps) {
   useEffect(() => { return () => recognitionRef.current?.stop(); }, []);
 
   const hasContent = input.trim().length > 0 || attachments.length > 0;
+
+  /* Send button magnetic spring */
+  const btnX = useMotionValue(0);
+  const btnY = useMotionValue(0);
+  const sBtnX = useSpring(btnX, { stiffness: 280, damping: 20 });
+  const sBtnY = useSpring(btnY, { stiffness: 280, damping: 20 });
+  const sendBtnRef = useRef<HTMLButtonElement>(null);
+
+  const handleSendMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!hasContent) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    btnX.set((e.clientX - cx) * 0.35);
+    btnY.set((e.clientY - cy) * 0.35);
+  };
+
+  const handleSendMouseLeave = () => { btnX.set(0); btnY.set(0); };
+
+  /* Ripple on send */
+  const [ripple, setRipple] = useState<{ x: number; y: number; id: number } | null>(null);
+  const [justSent, setJustSent] = useState(false);
+
+  const handleSendWithRipple = useCallback(async (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!hasContent && !isStreaming) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    setRipple({ x: e.clientX - r.left, y: e.clientY - r.top, id: Date.now() });
+    setJustSent(true);
+    setTimeout(() => setJustSent(false), 900);
+    await handleSend();
+  }, [hasContent, isStreaming, handleSend]);
 
   return (
     <motion.div
@@ -228,24 +259,48 @@ export function ChatInput({ onOpenCompare }: ChatInputProps) {
             </motion.button>
           )}
 
-          {/* Send button */}
+          {/* Send button — magnetic + ripple + icon morph */}
           <motion.button
-            onClick={handleSend}
+            ref={sendBtnRef}
+            onClick={handleSendWithRipple}
+            onMouseMove={handleSendMouseMove}
+            onMouseLeave={handleSendMouseLeave}
             disabled={!hasContent && !isStreaming}
-            whileHover={hasContent ? { scale: 1.05 } : {}}
-            whileTap={hasContent ? { scale: 0.92 } : {}}
+            style={{ x: sBtnX, y: sBtnY }}
+            whileHover={hasContent ? { scale: 1.08 } : {}}
+            whileTap={hasContent ? { scale: 0.88 } : {}}
             animate={{ backgroundColor: hasContent ? "rgba(139,92,246,0.85)" : "rgba(255,255,255,0.04)" }}
             transition={{ duration: 0.2 }}
-            className="p-2 rounded-lg flex-shrink-0 transition-all disabled:cursor-not-allowed mb-0.5"
+            className="relative p-2 rounded-lg flex-shrink-0 transition-all disabled:cursor-not-allowed mb-0.5 overflow-hidden"
           >
+            {/* Ripple effect */}
+            <AnimatePresence>
+              {ripple && (
+                <motion.span
+                  key={ripple.id}
+                  initial={{ scale: 0, opacity: 0.5 }}
+                  animate={{ scale: 6, opacity: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.55, ease: "easeOut" }}
+                  onAnimationComplete={() => setRipple(null)}
+                  className="absolute rounded-full bg-white/30 pointer-events-none"
+                  style={{ width: 16, height: 16, left: ripple.x - 8, top: ripple.y - 8 }}
+                />
+              )}
+            </AnimatePresence>
+
             <AnimatePresence mode="wait">
               {isStreaming
-                ? <motion.div key="l" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
+                ? <motion.div key="l" initial={{ opacity: 0, rotate: -90, scale: 0.6 }} animate={{ opacity: 1, rotate: 0, scale: 1 }} exit={{ opacity: 0, rotate: 90, scale: 0.6 }} transition={{ duration: 0.18 }}>
                     <Loader2 size={14} className="text-white/60 animate-spin" />
                   </motion.div>
-                : <motion.div key="s" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
-                    <ArrowUp size={14} className={hasContent ? "text-white" : "text-white/20"} />
-                  </motion.div>
+                : justSent
+                  ? <motion.div key="c" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }} transition={{ type: "spring", stiffness: 400, damping: 22 }}>
+                      <Check size={14} className="text-white" />
+                    </motion.div>
+                  : <motion.div key="s" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={{ duration: 0.15 }}>
+                      <ArrowUp size={14} className={hasContent ? "text-white" : "text-white/20"} />
+                    </motion.div>
               }
             </AnimatePresence>
           </motion.button>

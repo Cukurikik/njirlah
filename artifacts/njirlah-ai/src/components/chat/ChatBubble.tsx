@@ -129,13 +129,27 @@ export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) 
       className={`chat-bubble flex items-start gap-3 mb-6 group ${isUser ? "flex-row-reverse" : "flex-row"}`}
     >
       {/* Avatar */}
-      <div className={`w-6 h-6 rounded border flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden ${
-        isUser ? "border-violet-500/25 bg-violet-500/[0.08]" : "border-white/[0.07] bg-[#0a0a0a]"
-      }`}>
-        {isUser
-          ? <span className="text-[10px] font-bold text-violet-300 font-mono">U</span>
-          : <AIIcon size={16} />
-        }
+      <div className="relative flex-shrink-0 mt-0.5">
+        {/* Apple Intelligence ring on AI avatar */}
+        {!isUser && message.isStreaming && (
+          <motion.div
+            className="absolute -inset-[3px] rounded-md pointer-events-none"
+            style={{
+              background: "conic-gradient(from var(--angle), #7C3AED, #9E9EFF, #06B6D4, #EC4899, #7C3AED)",
+              borderRadius: "8px",
+            }}
+            animate={{ "--angle": ["0deg", "360deg"] } as any}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          />
+        )}
+        <div className={`relative w-6 h-6 rounded border flex items-center justify-center overflow-hidden ${
+          isUser ? "border-violet-500/25 bg-violet-500/[0.08]" : "border-white/[0.07] bg-[#0a0a0a]"
+        }`}>
+          {isUser
+            ? <span className="text-[10px] font-bold text-violet-300 font-mono">U</span>
+            : <AIIcon size={16} />
+          }
+        </div>
       </div>
 
       <div className={`flex-1 min-w-0 flex flex-col gap-1.5 ${isUser ? "items-end" : "items-start"}`}>

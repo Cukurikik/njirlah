@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useChatStore } from "@/store/chat-store";
 import { useChat } from "@/hooks/useChat";
 import { ChatBubble, TypingIndicator } from "./ChatBubble";
@@ -88,6 +88,32 @@ const LANG_COLORS: Record<string, string> = {
   sql:  "text-sky-400/70 border-sky-500/15 bg-sky-500/[0.04]",
 };
 
+/* 3-D tilt card hook */
+function TiltCard({ children, className }: { children: React.ReactNode; className?: string }) {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotX = useSpring(useTransform(y, [-0.5, 0.5], [8, -8]), { stiffness: 200, damping: 20 });
+  const rotY = useSpring(useTransform(x, [-0.5, 0.5], [-8, 8]), { stiffness: 200, damping: 20 });
+
+  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    x.set((e.clientX - r.left) / r.width - 0.5);
+    y.set((e.clientY - r.top) / r.height - 0.5);
+  };
+  const handleLeave = () => { x.set(0); y.set(0); };
+
+  return (
+    <motion.div
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      style={{ rotateX: rotX, rotateY: rotY, transformStyle: "preserve-3d" }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 const container = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.06 } },
@@ -145,15 +171,15 @@ export function ChatArea() {
             ))}
           </motion.div>
 
-          {/* Provider bento grid */}
-          <motion.div variants={item} className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+          {/* Provider bento grid — 3D tilt cards */}
+          <motion.div variants={item} className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4" style={{ perspective: 800 }}>
             {BENTO_FEATURES.map((f) => (
-              <motion.div
-                key={f.title}
-                whileHover={{ y: -2, backgroundColor: "rgba(255,255,255,0.022)" }}
-                transition={{ duration: 0.15 }}
-                className={`relative p-3 rounded-lg border border-white/[0.06] bg-white/[0.01] cursor-default transition-colors ${f.bg}`}
-              >
+              <TiltCard key={f.title} className={`relative p-3 rounded-lg border border-white/[0.06] bg-white/[0.01] cursor-default transition-colors ${f.bg}`}>
+                <motion.div
+                  whileHover={{ backgroundColor: "rgba(255,255,255,0.022)" }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute inset-0 rounded-lg pointer-events-none"
+                />
                 <div className="flex items-start justify-between mb-2">
                   <span className={f.logoColor}>{f.logo}</span>
                   <span className={`text-[9px] font-bold tracking-widest font-mono border px-1.5 py-0.5 rounded ${f.badgeColor}`}>
@@ -162,7 +188,7 @@ export function ChatArea() {
                 </div>
                 <p className="text-[11px] font-semibold text-white/65 mb-0.5 leading-tight">{f.title}</p>
                 <p className="text-[10px] text-white/25 leading-relaxed">{f.desc}</p>
-              </motion.div>
+              </TiltCard>
             ))}
           </motion.div>
 
