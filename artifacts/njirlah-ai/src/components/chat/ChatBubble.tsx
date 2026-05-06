@@ -14,26 +14,41 @@ interface ChatBubbleProps {
 }
 
 export function TypingIndicator() {
+  const bars = [6, 14, 10, 18, 8, 14, 6];
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
+      exit={{ opacity: 0, y: -4 }}
+      transition={{ duration: 0.22 }}
       className="flex items-start gap-3 mb-4"
     >
-      <div className="w-6 h-6 rounded border border-violet-500/20 bg-violet-500/[0.06] flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden">
+      <div className="w-7 h-7 rounded-md border border-violet-500/25 bg-gradient-to-br from-violet-600/10 to-blue-600/10 flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden">
         <AIIcon size={16} />
       </div>
-      <div className="flex items-center gap-1.5 h-8 px-3.5 rounded-md border border-white/[0.06] bg-white/[0.02]">
-        {[0, 1, 2].map((i) => (
-          <motion.div
+      <div className="flex items-center gap-[3px] px-4 rounded-xl border border-violet-500/15 bg-gradient-to-r from-violet-500/[0.05] to-blue-500/[0.02]" style={{ height: "36px" }}>
+        {bars.map((maxH, i) => (
+          <motion.span
             key={i}
-            className="w-1 h-1 rounded-full bg-violet-400"
-            animate={{ y: [0, -4, 0], opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 0.65, repeat: Infinity, delay: i * 0.16, ease: "easeInOut" }}
+            className="block w-[3px] rounded-full"
+            style={{
+              background: "linear-gradient(to top, rgba(124,58,237,0.5), rgba(167,139,250,0.95))",
+              minHeight: "3px",
+            }}
+            animate={{
+              height: [`${Math.max(3, maxH * 0.3)}px`, `${maxH}px`, `${Math.max(3, maxH * 0.3)}px`],
+              opacity: [0.3, 1, 0.3],
+            }}
+            transition={{
+              duration: 0.85,
+              repeat: Infinity,
+              delay: i * 0.09,
+              ease: [0.4, 0, 0.6, 1],
+            }}
           />
         ))}
       </div>
+      <span className="text-[10px] text-white/20 font-mono self-end pb-1 tracking-wide">generating</span>
     </motion.div>
   );
 }
@@ -173,44 +188,51 @@ export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) 
           </div>
         )}
 
-        {/* AI action toolbar */}
+        {/* AI action toolbar — always visible, not hover-only */}
         {!isUser && !message.isStreaming && message.content && (
-          <div className="flex items-center gap-0.5 group-hover:opacity-100 opacity-0 transition-opacity duration-150">
-            {[
-              {
-                icon: copied ? <Check size={11} className="text-green-400" /> : <Copy size={11} />,
-                onClick: handleCopy,
-                title: "Copy response",
-              },
-              ...(isLast
-                ? [{ icon: <RefreshCw size={11} />, onClick: regenerate, title: "Regenerate" }]
-                : []),
-              {
-                icon: <ThumbsUp size={11} />,
-                onClick: () => handleLike(true),
-                title: "Good response",
-                active: message.liked === true,
-                activeClass: "text-green-400",
-              },
-              {
-                icon: <ThumbsDown size={11} />,
-                onClick: () => handleLike(false),
-                title: "Bad response",
-                active: message.liked === false,
-                activeClass: "text-red-400",
-              },
-            ].map((action, i) => (
+          <div className="flex items-center gap-0.5 mt-0.5">
+            <motion.button
+              whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.06)" }}
+              whileTap={{ scale: 0.9 }}
+              onClick={handleCopy}
+              title="Copy response"
+              className="p-1.5 rounded text-white/20 hover:text-white/55 transition-colors"
+            >
+              {copied ? <Check size={11} className="text-green-400" /> : <Copy size={11} />}
+            </motion.button>
+
+            {isLast && (
               <motion.button
-                key={i}
-                whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.05)" }}
+                whileHover={{ scale: 1.05, backgroundColor: "rgba(124,58,237,0.12)" }}
                 whileTap={{ scale: 0.9 }}
-                onClick={action.onClick}
-                title={action.title}
-                className={`p-1.5 rounded text-white/20 hover:text-white/55 transition-colors ${"active" in action && action.active ? (action.activeClass ?? "") : ""}`}
+                onClick={regenerate}
+                title="Regenerate response"
+                className="flex items-center gap-1 px-2 py-1 rounded border border-violet-500/20 text-violet-400/70 hover:text-violet-300 hover:border-violet-500/40 transition-all text-[10px] font-mono"
               >
-                {action.icon}
+                <RefreshCw size={10} />
+                <span>Regenerate</span>
               </motion.button>
-            ))}
+            )}
+
+            <motion.button
+              whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.05)" }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => handleLike(true)}
+              title="Good response"
+              className={`p-1.5 rounded transition-colors ${message.liked === true ? "text-green-400" : "text-white/20 hover:text-white/55"}`}
+            >
+              <ThumbsUp size={11} />
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.05)" }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => handleLike(false)}
+              title="Bad response"
+              className={`p-1.5 rounded transition-colors ${message.liked === false ? "text-red-400" : "text-white/20 hover:text-white/55"}`}
+            >
+              <ThumbsDown size={11} />
+            </motion.button>
           </div>
         )}
 
