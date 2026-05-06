@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Square, ChevronDown } from "lucide-react";
+import { Send, Square, ChevronDown, RotateCcw } from "lucide-react";
 import { FileTree } from "./FileTree";
 import { CodeEditor } from "./CodeEditor";
 import { useAgentStore } from "@/store/agent-store";
@@ -21,6 +21,7 @@ export function AgentCodePanel() {
   const [modelSource, setModelSource] = useState<"openrouter" | "cloudflare">("cloudflare");
   const [selectedModel, setSelectedModel] = useState("");
   const [showModelPicker, setShowModelPicker] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const abortRef = { current: null as AbortController | null };
 
   const {
@@ -40,6 +41,7 @@ export function AgentCodePanel() {
     setFileDone,
     setActiveFile,
     addLog,
+    reset,
   } = useAgentStore();
 
   const { openRouterKey } = useApiKeyStore();
@@ -165,22 +167,73 @@ export function AgentCodePanel() {
     <div className="flex flex-col h-full" style={{ background: "#0d0d18" }}>
       {/* Header */}
       <div className="px-4 pt-4 pb-3 border-b border-white/5 flex-shrink-0">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h2
-            className="text-white text-[17px] font-semibold"
+            className="text-white text-[17px] font-semibold truncate"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             Agent Code Generator
           </h2>
-          <div className={`flex items-center gap-1.5 text-xs ${statusColors[agentStatus]}`}>
-            {isGenerating && (
-              <motion.span
-                className="w-1.5 h-1.5 rounded-full bg-blue-400"
-                animate={{ opacity: [1, 0.2, 1] }}
-                transition={{ repeat: Infinity, duration: 0.8 }}
-              />
-            )}
-            {statusLabels[agentStatus]}
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* New Generation button — only visible when there's a completed/errored run */}
+            <AnimatePresence>
+              {!isGenerating && fileOrder.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.85, x: 8 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.85, x: 8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {confirmReset ? (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-gray-400 whitespace-nowrap">Clear and start fresh?</span>
+                      <motion.button
+                        whileTap={{ scale: 0.93 }}
+                        onClick={() => {
+                          reset();
+                          setPrompt("");
+                          setConfirmReset(false);
+                        }}
+                        className="text-[10px] font-semibold text-green-400 hover:text-green-300 px-2 py-0.5 rounded border border-green-500/30 bg-green-500/10 transition-colors"
+                      >
+                        Yes
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.93 }}
+                        onClick={() => setConfirmReset(false)}
+                        className="text-[10px] font-semibold text-gray-500 hover:text-gray-300 px-2 py-0.5 rounded border border-white/10 bg-white/5 transition-colors"
+                      >
+                        No
+                      </motion.button>
+                    </div>
+                  ) : (
+                    <motion.button
+                      whileHover={{ scale: 1.04, backgroundColor: "rgba(255,255,255,0.06)" }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setConfirmReset(true)}
+                      className="flex items-center gap-1.5 text-[11px] text-gray-400 hover:text-white border border-white/10 rounded-lg px-2.5 py-1.5 transition-colors"
+                      title="Start a new generation"
+                    >
+                      <RotateCcw size={11} />
+                      New
+                    </motion.button>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Status badge */}
+            <div className={`flex items-center gap-1.5 text-xs ${statusColors[agentStatus]}`}>
+              {isGenerating && (
+                <motion.span
+                  className="w-1.5 h-1.5 rounded-full bg-blue-400"
+                  animate={{ opacity: [1, 0.2, 1] }}
+                  transition={{ repeat: Infinity, duration: 0.8 }}
+                />
+              )}
+              {statusLabels[agentStatus]}
+            </div>
           </div>
         </div>
       </div>
