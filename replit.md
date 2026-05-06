@@ -1,45 +1,56 @@
-# [Project name]
+# NJIRLAH AI
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A beautiful dark-themed AI chat interface supporting multiple providers (built-in GPT-5.4, Cloudflare Workers AI, OpenRouter BYOK) with streaming responses, compare mode, live code preview, and local API key encryption.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Frontend: `pnpm --filter @workspace/njirlah-ai run dev`
+- API Server: `pnpm --filter @workspace/api-server run dev`
+- Install: `pnpm install`
+- Typecheck: `pnpm run typecheck`
+
+Required env vars:
+- `AI_INTEGRATIONS_OPENAI_BASE_URL` — Replit AI proxy base URL (auto-provisioned)
+- `AI_INTEGRATIONS_OPENAI_API_KEY` — Replit AI proxy key (auto-provisioned)
+- `CLOUDFLARE_ACCOUNT_ID` — (optional) Cloudflare account ID for Workers AI
+- `CLOUDFLARE_API_TOKEN` — (optional) Cloudflare API token for Workers AI
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Frontend: React 19 + Vite 7 + TypeScript + Tailwind CSS v4 + wouter (routing)
+- UI: shadcn/ui + Radix primitives + framer-motion
+- State: Zustand (persisted) + TanStack Query
+- API Server: Express 5 + pino logging + esbuild
+- AI: OpenAI SDK via Replit AI Integrations proxy; OpenRouter and Cloudflare via fetch proxy
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/njirlah-ai/` — frontend React app
+- `artifacts/njirlah-ai/src/store/` — Zustand stores (chat, compare, api-key, appearance)
+- `artifacts/njirlah-ai/src/hooks/` — useChat, useCompareChat hooks
+- `artifacts/njirlah-ai/src/components/chat/` — chat UI components
+- `artifacts/api-server/src/routes/` — Express API routes (chat.ts, status.ts, cloudflare.ts)
+- `lib/integrations-openai-ai-server/` — OpenAI SDK client wrapper
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- All provider proxying done server-side (api-server) to avoid CORS and protect keys
+- OpenRouter API key is user-supplied (BYOK), passed via `x-api-key` header, never stored server-side
+- API keys stored in browser using AES-GCM encryption (`lib/encryption.ts`)
+- Cloudflare Workers AI falls back to a built-in model list if credentials aren't configured
+- `/api/status` pings all three providers and returns latency for the status badge
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
-
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Multi-provider AI chat: NJIRLAH built-in (GPT-5.4, free), Cloudflare Workers AI (free), OpenRouter (BYOK)
+- Streaming SSE responses with markdown + syntax highlighting
+- Compare mode: side-by-side model comparison
+- Live Code Preview panel for HTML/TSX output
+- Custom instructions, export chat, appearance settings
+- API key management with local AES-GCM encryption
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- The vite config requires `PORT` and `BASE_PATH` env vars — set by the workflow automatically
+- The api-server workflow rebuilds on each start (esbuild) — takes ~300ms
+- Do NOT run `pnpm dev` at workspace root — no dev script there
