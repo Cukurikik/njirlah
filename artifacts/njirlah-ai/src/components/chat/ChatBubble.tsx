@@ -183,7 +183,7 @@ export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) 
           <motion.div
             className="absolute -inset-[2px] rounded-xl pointer-events-none"
             style={{ background: "conic-gradient(from var(--a, 0deg), #7c3aed, #a855f7, #22d3ee, #ec4899, #7c3aed)", borderRadius: "12px" }}
-            animate={{ "--a": ["0deg", "360deg"] } as Record<string, string>}
+            animate={{ "--a": ["0deg", "360deg"] } as unknown as Record<string, string>}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
           />
         )}

@@ -250,7 +250,7 @@ export function Sidebar({ onOpenApiKey, onExport, onOpenCustomInstructions, mobi
                 exit={{ opacity: 0 }}
                 className="whitespace-nowrap font-mono"
               >
-                Landing Page
+                Chat Home
               </motion.span>
             )}
           </AnimatePresence>
