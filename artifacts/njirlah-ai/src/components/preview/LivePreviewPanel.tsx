@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { RefreshCw, Share2, Maximize2, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
-import type { AgentFile } from "@/types/agent-types";
+import type { AgentFileEntry } from "@/store/agent-store";
 import { buildPreviewHtml } from "@/lib/build-preview-html";
 
 type DeviceMode = "desktop" | "tablet" | "mobile";
@@ -45,7 +45,7 @@ function DeviceButton({
 }
 
 interface LivePreviewPanelProps {
-  files: Record<string, AgentFile>;
+  files: Record<string, AgentFileEntry>;
   fileOrder: string[];
   isGenerating: boolean;
 }
@@ -57,14 +57,14 @@ export function LivePreviewPanel({ files, fileOrder, isGenerating }: LivePreview
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [previewHtml, setPreviewHtml] = useState<string>("");
 
-  const hasDoneFiles = fileOrder.some((f) => files[f]?.isDone);
+  const hasDoneFiles = fileOrder.some((f) => files[f]?.status === "done");
 
   useEffect(() => {
     if (hasDoneFiles) {
       const html = buildPreviewHtml(files);
       setPreviewHtml(html);
     }
-  }, [fileOrder.filter((f) => files[f]?.isDone).join(","), hasDoneFiles]);
+  }, [fileOrder.filter((f) => files[f]?.status === "done").join(","), hasDoneFiles]);
 
   const handleRefresh = () => {
     setRefreshKey((k) => k + 1);

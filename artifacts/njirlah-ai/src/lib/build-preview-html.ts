@@ -1,4 +1,4 @@
-import type { AgentFile } from "@/types/agent-types";
+import type { AgentFileEntry } from "@/store/agent-store";
 
 function guessLanguage(filename: string): "html" | "css" | "js" | "jsx" | "unknown" {
   if (filename.endsWith(".html")) return "html";
@@ -8,15 +8,15 @@ function guessLanguage(filename: string): "html" | "css" | "js" | "jsx" | "unkno
   return "unknown";
 }
 
-export function buildPreviewHtml(files: Record<string, AgentFile>): string {
-  const fileValues = Object.values(files).filter((f) => f.content.trim());
+export function buildPreviewHtml(files: Record<string, AgentFileEntry>): string {
+  const entries = Object.entries(files)
+    .filter(([, f]) => f.content.trim())
+    .map(([filename, f]) => ({ filename, content: f.content, status: f.status }));
 
-  const htmlFile = fileValues.find((f) => guessLanguage(f.filename) === "html");
-  const cssFiles = fileValues.filter((f) => guessLanguage(f.filename) === "css");
-  const jsxFiles = fileValues.filter(
-    (f) => guessLanguage(f.filename) === "jsx",
-  );
-  const jsFiles = fileValues.filter((f) => guessLanguage(f.filename) === "js");
+  const htmlFile = entries.find((f) => guessLanguage(f.filename) === "html");
+  const cssFiles = entries.filter((f) => guessLanguage(f.filename) === "css");
+  const jsxFiles = entries.filter((f) => guessLanguage(f.filename) === "jsx");
+  const jsFiles = entries.filter((f) => guessLanguage(f.filename) === "js");
 
   const hasJsx = jsxFiles.length > 0;
 
@@ -79,6 +79,10 @@ export function buildPreviewHtml(files: Record<string, AgentFile>): string {
 
   const cssContent = cssFiles.map((f) => f.content).join("\n\n");
   const jsContent = jsFiles.map((f) => f.content).join("\n\n");
+  const unknownContent = entries
+    .filter((f) => guessLanguage(f.filename) === "unknown")
+    .map((f) => f.content)
+    .join("\n");
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -93,7 +97,7 @@ export function buildPreviewHtml(files: Record<string, AgentFile>): string {
   </style>
 </head>
 <body>
-  ${fileValues.filter(f => guessLanguage(f.filename) === "unknown").map(f => f.content).join("\n")}
+  ${unknownContent}
   ${jsContent ? `<script>\n${jsContent}\n</script>` : ""}
 </body>
 </html>`;

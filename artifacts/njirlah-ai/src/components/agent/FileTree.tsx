@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import type { AgentFile } from "@/types/agent-types";
+import type { AgentFileEntry } from "@/store/agent-store";
 
 function FileIcon({ filename }: { filename: string }) {
   const ext = filename.split(".").pop() ?? "";
@@ -31,7 +31,7 @@ function FileIcon({ filename }: { filename: string }) {
 }
 
 interface FileTreeProps {
-  files: Record<string, AgentFile>;
+  files: Record<string, AgentFileEntry>;
   fileOrder: string[];
   activeFile: string | null;
   onSelectFile: (filename: string) => void;
@@ -71,14 +71,14 @@ export function FileTree({ files, fileOrder, activeFile, onSelectFile }: FileTre
             >
               <FileIcon filename={filename} />
               <span className="text-xs font-mono flex-1 truncate">{filename}</span>
-              {file.isStreaming && (
+              {file.status === "streaming" && (
                 <motion.span
                   className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"
                   animate={{ opacity: [1, 0.2, 1] }}
                   transition={{ repeat: Infinity, duration: 0.8 }}
                 />
               )}
-              {file.isDone && !file.isStreaming && (
+              {file.status === "done" && (
                 <svg viewBox="0 0 12 12" fill="none" className="w-3 h-3 flex-shrink-0 text-green-400">
                   <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
                 </svg>

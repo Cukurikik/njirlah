@@ -18,7 +18,7 @@ const DEFAULT_PROMPTS = [
   "Portfolio pribadi dengan galeri proyek",
 ];
 
-async function downloadAsZip(files: Record<string, { content?: string; isDone?: boolean }>, fileOrder: string[]) {
+async function downloadAsZip(files: Record<string, { content?: string; status?: string }>, fileOrder: string[]) {
   const zip = new JSZip();
   for (const filename of fileOrder) {
     const file = files[filename];

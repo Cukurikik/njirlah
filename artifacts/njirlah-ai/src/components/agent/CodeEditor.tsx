@@ -7,7 +7,7 @@ import xml from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
 import css from "react-syntax-highlighter/dist/esm/languages/hljs/css";
 import json from "react-syntax-highlighter/dist/esm/languages/hljs/json";
 import { getFileLanguage } from "@/lib/build-preview-html";
-import type { AgentFile } from "@/types/agent-types";
+import type { AgentFileEntry } from "@/store/agent-store";
 
 // Register languages
 SyntaxHighlighter.registerLanguage("javascript", js);
@@ -16,7 +16,7 @@ SyntaxHighlighter.registerLanguage("css", css);
 SyntaxHighlighter.registerLanguage("json", json);
 
 interface CodeEditorProps {
-  file: AgentFile | null;
+  file: AgentFileEntry | null;
   filename: string | null;
 }
 
@@ -24,10 +24,10 @@ export function CodeEditor({ file, filename }: CodeEditorProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (file?.isStreaming && scrollRef.current) {
+    if (file?.status === "streaming" && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [file?.content, file?.isStreaming]);
+  }, [file?.content, file?.status]);
 
   if (!file || !filename) {
     return (
@@ -49,7 +49,7 @@ export function CodeEditor({ file, filename }: CodeEditorProps) {
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs text-gray-300">{filename}</span>
-          {file.isStreaming && (
+          {file.status === "streaming" && (
             <motion.span
               className="inline-flex items-center gap-1 text-blue-400 text-[10px]"
               animate={{ opacity: [1, 0.5, 1] }}
@@ -59,7 +59,7 @@ export function CodeEditor({ file, filename }: CodeEditorProps) {
               streaming
             </motion.span>
           )}
-          {file.isDone && (
+          {file.status === "done" && (
             <span className="inline-flex items-center gap-1 text-green-400 text-[10px]">
               <svg viewBox="0 0 10 10" fill="none" className="w-2.5 h-2.5">
                 <path d="M2 5l2 2 4-4" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
