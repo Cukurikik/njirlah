@@ -48,7 +48,7 @@ export function ApiStatusBadge() {
   const globalColor = isError || anyDown ? "bg-red-400" : allOk ? "bg-green-400" : "bg-yellow-400";
 
   return (
-    <div className="relative">
+    <div className="relative font-bold">
       <motion.button
         onClick={() => setOpen(!open)}
         whileHover={{ backgroundColor: "rgba(255,255,255,0.04)" }}
@@ -71,7 +71,6 @@ export function ApiStatusBadge() {
         <span className="hidden sm:inline">Status</span>
         <ChevronDown size={9} className={`transition-transform ${open ? "rotate-180" : ""}`} />
       </motion.button>
-
       <AnimatePresence>
         {open && (
           <>
