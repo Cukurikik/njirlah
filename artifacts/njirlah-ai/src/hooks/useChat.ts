@@ -55,7 +55,12 @@ async function readStream(
         const parsed = JSON.parse(data) as {
           choices?: Array<{ delta?: { content?: string } }>;
           result?: string;
+          error?: string;
         };
+
+        if (parsed.error) {
+          throw new Error(parsed.error);
+        }
 
         let chunk = "";
         if (parsed.choices?.[0]?.delta?.content) {
@@ -68,7 +73,10 @@ async function readStream(
           fullContent += chunk;
           onChunk(chunk);
         }
-      } catch {
+      } catch (e) {
+        if ((e as Error).message && !(e as SyntaxError).stack?.includes("JSON.parse")) {
+          throw e;
+        }
         // skip malformed lines
       }
     }

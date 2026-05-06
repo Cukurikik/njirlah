@@ -18,46 +18,120 @@ function setupSSE(res: import("express").Response) {
   res.flushHeaders();
 }
 
-router.post("/replit/chat", async (req, res) => {
+// Attempt Replit AI integration; if unavailable, fall back to Cloudflare Workers AI
+async function tryReplitOpenAI(
+  messages: ApiMessage[],
+  model: string,
+  res: import("express").Response,
+): Promise<boolean> {
+  const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+  const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY ?? "dummy";
+  if (!baseURL) return false;
+
   try {
-    const { model = "gpt-5.4", messages, stream: doStream = true } = req.body as {
-      model?: string;
-      messages: ApiMessage[];
-      stream?: boolean;
-    };
-
-    const openai = getOpenAIClient();
-
-    if (!doStream) {
-      const completion = await openai.chat.completions.create({
-        model,
-        max_completion_tokens: 8192,
-        messages,
-        stream: false,
-      });
-      res.json(completion);
-      return;
-    }
-
-    setupSSE(res);
-
+    const openai = new OpenAI({ apiKey, baseURL });
     const stream = await openai.chat.completions.create({
       model,
       max_completion_tokens: 8192,
       messages,
       stream: true,
     });
-
     for await (const chunk of stream) {
       res.write(`data: ${JSON.stringify(chunk)}\n\n`);
     }
     res.write("data: [DONE]\n\n");
     res.end();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function extractCfError(raw: string): string {
+  try {
+    const parsed = JSON.parse(raw) as { errors?: { message: string }[] };
+    return parsed.errors?.[0]?.message ?? raw;
+  } catch {
+    return raw;
+  }
+}
+
+async function fallbackCloudflare(
+  messages: ApiMessage[],
+  res: import("express").Response,
+): Promise<void> {
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+
+  if (!accountId || !apiToken) {
+    res.write(`data: ${JSON.stringify({ error: "NJIRLAH AI Built-in is temporarily unavailable. Switch to Cloudflare Workers AI or add an OpenRouter key." })}\n\n`);
+    res.end();
+    return;
+  }
+
+  const upstream = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.1-8b-instruct`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiToken}`,
+      },
+      body: JSON.stringify({ messages, stream: true }),
+    },
+  );
+
+  if (!upstream.ok || !upstream.body) {
+    const errText = extractCfError(await upstream.text().catch(() => upstream.statusText));
+    res.write(`data: ${JSON.stringify({ error: `Cloudflare error: ${errText}. Please update your Cloudflare credentials in the sidebar.` })}\n\n`);
+    res.end();
+    return;
+  }
+
+  const reader = upstream.body.getReader();
+  const decoder = new TextDecoder();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    res.write(decoder.decode(value, { stream: true }));
+  }
+  res.end();
+}
+
+router.post("/replit/chat", async (req, res) => {
+  const { model = "gpt-5.4", messages, stream: doStream = true } = req.body as {
+    model?: string;
+    messages: ApiMessage[];
+    stream?: boolean;
+  };
+
+  if (!doStream) {
+    // Non-streaming: try Replit first then Cloudflare
+    const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+    if (baseURL) {
+      try {
+        const openai = new OpenAI({ apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY ?? "dummy", baseURL });
+        const completion = await openai.chat.completions.create({ model, max_completion_tokens: 8192, messages, stream: false });
+        res.json(completion);
+        return;
+      } catch { /* fall through */ }
+    }
+    res.status(503).json({ error: "Built-in model unavailable. Use Cloudflare or OpenRouter instead." });
+    return;
+  }
+
+  setupSSE(res);
+
+  try {
+    const ok = await tryReplitOpenAI(messages, model, res);
+    if (!ok) {
+      await fallbackCloudflare(messages, res);
+    }
   } catch (err) {
     req.log.error({ err }, "replit/chat error");
-    if (!res.headersSent) {
-      res.status(500).json({ error: "Internal server error" });
-    } else {
+    if (!res.writableEnded) {
+      const msg = (err as Error).message ?? "Internal server error";
+      res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
       res.end();
     }
   }
@@ -162,33 +236,63 @@ router.post("/cloudflare/chat", async (req, res) => {
       },
     );
 
+    const sendSSEError = (msg: string) => {
+      res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
+      res.end();
+    };
+
     if (!upstream.ok) {
-      const errText = await upstream.text().catch(() => upstream.statusText);
+      const rawErr = await upstream.text().catch(() => upstream.statusText);
+      const errText = extractCfError(rawErr);
       if (!res.headersSent) {
         res.status(upstream.status).json({ error: errText });
       } else {
-        res.end();
+        sendSSEError(`Cloudflare error: ${errText}. Please update your Cloudflare credentials in the sidebar.`);
       }
       return;
     }
 
     if (!doStream) {
-      const data = await upstream.json();
+      const data = (await upstream.json()) as { success?: boolean; errors?: { message: string }[]; result?: unknown };
+      if (data.success === false) {
+        const cfErr = data.errors?.[0]?.message ?? "Cloudflare AI error";
+        res.status(400).json({ error: cfErr });
+        return;
+      }
       res.json(data);
       return;
     }
 
     if (!upstream.body) {
-      res.end();
+      if (res.headersSent) { res.end(); } else { res.status(502).json({ error: "No response body from Cloudflare" }); }
       return;
     }
 
+    // Buffer first chunk to detect non-SSE error bodies (e.g. auth errors returned as 200 JSON)
     const reader = upstream.body.getReader();
     const decoder = new TextDecoder();
+    let first = true;
+    let leftover = "";
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      res.write(decoder.decode(value, { stream: true }));
+      const chunk = decoder.decode(value, { stream: true });
+      if (first) {
+        first = false;
+        const trimmed = (leftover + chunk).trimStart();
+        // Cloudflare wraps errors in {"result":null,"success":false,...}
+        if (trimmed.startsWith("{") && trimmed.includes('"success":false')) {
+          try {
+            const parsed = JSON.parse(trimmed) as { errors?: { message: string }[] };
+            const cfErr = parsed.errors?.[0]?.message ?? "Cloudflare authentication error";
+            sendSSEError(cfErr);
+            return;
+          } catch { /* not valid JSON yet, continue streaming */ }
+        }
+        leftover = "";
+      }
+      res.write(chunk);
     }
     res.end();
   } catch (err) {
@@ -196,6 +300,7 @@ router.post("/cloudflare/chat", async (req, res) => {
     if (!res.headersSent) {
       res.status(500).json({ error: "Internal server error" });
     } else {
+      res.write(`data: ${JSON.stringify({ error: (err as Error).message ?? "Internal server error" })}\n\n`);
       res.end();
     }
   }
