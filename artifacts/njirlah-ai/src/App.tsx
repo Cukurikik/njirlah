@@ -25,6 +25,7 @@ import AppPreviewPage from "@/pages/AppPreviewPage";
 import AgentPage from "@/pages/AgentPage";
 import LandingPage from "@/pages/LandingPage";
 import TemplatesPage from "@/pages/TemplatesPage";
+import ChatPage from "@/pages/ChatPage";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 1000 * 60 * 5 } },
@@ -143,6 +144,7 @@ function AppInner() {
 function AppRouter() {
   const path = window.location.pathname;
   if (path === "/" || path === "") return <LandingPage />;
+  if (path.endsWith("/chat")) return <ChatPage />;
   if (path.endsWith("/animations")) return <AnimationsPage />;
   if (path.endsWith("/preview")) return <AppPreviewPage />;
   if (path.endsWith("/agent")) return <AgentPage />;

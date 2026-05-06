@@ -1,360 +1,388 @@
-import { useEffect, useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Zap, Shield, Globe, Smartphone, Server, Code2, Check } from "lucide-react";
+import {
+  Home, FolderOpen, Globe2, Shield, Settings, BookOpen, FileText,
+  Plus, ArrowRight, ChevronLeft, ChevronRight, Sparkles, Zap,
+  MessageSquare, BarChart2, Layout, Smartphone, FileSpreadsheet,
+  Presentation, Upload, ArrowUp
+} from "lucide-react";
 
-const PROVIDERS = [
-  "OpenAI", "Anthropic", "Google Gemini", "Meta Llama", "Mistral", "DeepSeek",
-  "Cloudflare AI", "Qwen", "Cohere", "Grok xAI", "Groq", "Together AI",
-  "Fireworks AI", "NovitaAI", "SambaNova", "Cerebras", "Perplexity", "OpenRouter",
+const NAV_TOP = [
+  { icon: Home,        label: "Home",              active: true  },
+  { icon: FolderOpen,  label: "Projects"                         },
+  { icon: Globe2,      label: "Published Projects"               },
+  { icon: Shield,      label: "Security"                         },
+  { icon: Settings,    label: "Settings"                         },
 ];
 
-const FEATURES = [
-  { icon: Globe,      label: "Website Dev",   desc: "React, Next.js, Astro, Vue, Svelte",     color: "#22d3ee" },
-  { icon: Smartphone, label: "Mobile Dev",    desc: "React Native, Expo, Flutter, Swift",      color: "#f472b6" },
-  { icon: Server,     label: "Full Stack",    desc: "Next.js + Prisma, FastAPI, NestJS, T3",   color: "#a78bfa" },
-  { icon: Shield,     label: "BYOK",          desc: "Your keys. Never stored on our servers",  color: "#34d399" },
-  { icon: Zap,        label: "50+ Models",   desc: "OpenRouter + Cloudflare + Built-in",       color: "#fbbf24" },
-  { icon: Code2,      label: "Streaming",    desc: "Real-time token-by-token output",          color: "#60a5fa" },
+const NAV_BOTTOM = [
+  { icon: BookOpen,    label: "Learn"              },
+  { icon: FileText,    label: "Documentation"      },
 ];
 
-const PERKS = [
-  "No account required",
-  "Keys encrypted locally",
-  "Stream every response",
-  "Three dev modes built-in",
+const MODES = [
+  { icon: Globe2,           label: "Website",          path: "/app", mode: "website"   },
+  { icon: Smartphone,       label: "Mobile",            path: "/app", mode: "mobile"    },
+  { icon: BarChart2,        label: "Data Visualization",path: "/app", mode: "fullstack" },
+  { icon: FileSpreadsheet,  label: "Spreadsheet",       path: "/app", mode: "fullstack" },
+  { icon: Presentation,     label: "Slides",            path: "/app", mode: "fullstack" },
+  { icon: MessageSquare,    label: "Chat AI",           path: "/chat",mode: ""          },
+  { icon: Layout,           label: "Dashboard",         path: "/app", mode: "website"   },
 ];
 
-const CODE_SNIPPET = `const { stream } = useChat({
-  model: "claude-opus-4-5",
-  provider: "openrouter",
-  systemPrompt: "Website Dev mode",
-});
+const EXAMPLE_PROMPTS = [
+  "Weekly meal planner",
+  "Cohort analysis dashboard",
+  "3D puzzle platformer",
+  "E-commerce landing page",
+  "Todo app with auth",
+];
 
-// Build anything. Ship instantly.`;
+const RECENT_PROJECTS = [
+  { name: "njirlah", desc: "AI coding workspace", color: "#6d28d9" },
+  { name: "my-portfolio", desc: "Personal portfolio site", color: "#0891b2" },
+  { name: "dashboard-app", desc: "Analytics dashboard", color: "#059669" },
+];
+
+function navigate(path: string) {
+  window.history.pushState({}, "", path);
+  window.location.reload();
+}
 
 export default function LandingPage() {
-  const [codeVisible, setCodeVisible] = useState(0);
+  const [input, setInput] = useState("");
+  const [modesOffset, setModesOffset] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const VISIBLE = 5;
+  const canLeft = modesOffset > 0;
+  const canRight = modesOffset + VISIBLE < MODES.length;
 
+  // Auto-resize textarea
   useEffect(() => {
-    const lines = CODE_SNIPPET.split("\n");
-    if (codeVisible >= lines.length) return;
-    const t = setTimeout(() => setCodeVisible((v) => v + 1), 120);
-    return () => clearTimeout(t);
-  }, [codeVisible]);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [input]);
 
-  const launch = () => {
-    window.history.pushState({}, "", "/app");
-    window.location.reload();
+  const handleSubmit = (prompt?: string) => {
+    const text = (prompt ?? input).trim();
+    if (!text) return;
+    // Store prompt in sessionStorage and go to agent
+    sessionStorage.setItem("initial_prompt", text);
+    navigate("/app");
+  };
+
+  const handleModeClick = (mode: typeof MODES[0]) => {
+    if (mode.path === "/chat") {
+      navigate("/chat");
+    } else {
+      navigate("/app");
+    }
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden" style={{ background: "#070711", color: "#fff" }}>
+    <div className="flex h-screen w-screen overflow-hidden" style={{ background: "#0d0d0d", color: "#fff", fontFamily: "'Space Grotesk', Inter, sans-serif" }}>
 
-      {/* Ambient light */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-30"
-          style={{ background: "radial-gradient(ellipse, rgba(109,40,217,0.35) 0%, transparent 70%)", filter: "blur(40px)" }} />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] opacity-15"
-          style={{ background: "radial-gradient(ellipse, rgba(236,72,153,0.4) 0%, transparent 70%)", filter: "blur(60px)" }} />
-        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] opacity-10"
-          style={{ background: "radial-gradient(ellipse, rgba(34,211,238,0.4) 0%, transparent 70%)", filter: "blur(60px)" }} />
-        {/* Subtle grid */}
-        <div className="absolute inset-0 opacity-[0.025]"
-          style={{ backgroundImage: "linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)", backgroundSize: "80px 80px" }} />
-      </div>
-
-      {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-8 py-6 max-w-6xl mx-auto">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #6d28d9, #a855f7)" }}>
-            <Zap size={14} className="text-white" />
-          </div>
-          <span className="font-bold text-white tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            NJIRLAH AI
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => { window.history.pushState({}, "", "/templates"); window.location.reload(); }}
-            className="text-sm text-white/40 hover:text-white/70 transition-colors font-medium"
-          >
-            Templates
-          </button>
+      {/* ── Left Sidebar ── */}
+      <div className="flex flex-col w-[220px] flex-shrink-0 border-r border-white/[0.06]" style={{ background: "#111111" }}>
+        {/* Workspace selector */}
+        <div className="px-3 pt-4 pb-3">
           <motion.button
-            onClick={launch}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all"
-            style={{ background: "linear-gradient(135deg, #6d28d9, #7c3aed)" }}
+            whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-colors"
           >
-            Launch App
-            <ArrowRight size={14} />
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+              style={{ background: "linear-gradient(135deg, #6d28d9, #a855f7)" }}>
+              N
+            </div>
+            <span className="flex-1 text-sm font-semibold text-white/80 truncate text-left">NJIRLAH AI</span>
+            <ChevronRight size={13} className="text-white/30" />
           </motion.button>
         </div>
-      </nav>
 
-      {/* Hero */}
-      <section className="relative z-10 max-w-6xl mx-auto px-8 pt-16 pb-20 flex flex-col lg:flex-row items-center gap-16">
-        {/* Left */}
-        <div className="flex-1">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        {/* Create buttons */}
+        <div className="px-3 pb-4 space-y-1">
+          <motion.button
+            onClick={() => navigate("/app")}
+            whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/65 hover:text-white/90 transition-colors"
           >
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-violet-500/20 bg-violet-500/[0.06] mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-              <span className="text-xs font-mono text-violet-300/80 tracking-widest uppercase">50+ AI Models · Free to Start</span>
-            </div>
-
-            <h1 className="text-5xl lg:text-6xl font-black leading-[1.05] mb-6 tracking-tight"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Code Anything.
-              <br />
-              <span style={{
-                background: "linear-gradient(135deg, #a78bfa 0%, #ec4899 50%, #22d3ee 100%)",
-                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-              }}>
-                Ship Everything.
-              </span>
-            </h1>
-
-            <p className="text-lg text-white/45 leading-relaxed mb-10 max-w-lg" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              The AI coding platform built for vibe coders. One interface, 50+ models,
-              Website, Mobile, and Full Stack modes. Your keys stay on your device.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-start gap-3 mb-10">
-              <motion.button
-                onClick={launch}
-                whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(109,40,217,0.4)" }}
-                whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-2.5 px-7 py-3.5 rounded-2xl text-white font-semibold text-base transition-all"
-                style={{ background: "linear-gradient(135deg, #6d28d9, #7c3aed, #8b5cf6)" }}
-              >
-                <Zap size={16} />
-                Start Vibing Free
-              </motion.button>
-              <motion.button
-                onClick={() => { window.history.pushState({}, "", "/templates"); window.location.reload(); }}
-                whileHover={{ borderColor: "rgba(255,255,255,0.18)" }}
-                className="flex items-center gap-2 px-6 py-3.5 rounded-2xl border border-white/[0.1] text-white/60 font-medium text-base transition-all"
-              >
-                Browse Templates
-                <ArrowRight size={14} />
-              </motion.button>
-            </div>
-
-            {/* Perks */}
-            <div className="flex flex-wrap gap-x-5 gap-y-2">
-              {PERKS.map((p) => (
-                <div key={p} className="flex items-center gap-1.5 text-sm text-white/35">
-                  <Check size={12} className="text-violet-400" />
-                  <span>{p}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Right — code preview */}
-        <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="flex-1 w-full max-w-lg"
-        >
-          <div className="rounded-2xl border border-white/[0.08] overflow-hidden shadow-2xl"
-            style={{ background: "#0e0e1c" }}>
-            {/* Chrome */}
-            <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/[0.06]" style={{ background: "#0b0b18" }}>
-              <div className="w-3 h-3 rounded-full bg-red-500/60" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
-              <div className="w-3 h-3 rounded-full bg-green-500/60" />
-              <span className="ml-3 text-[11px] font-mono text-white/20">njirlah-app.tsx</span>
-              <div className="ml-auto flex items-center gap-1.5">
-                <span className="text-[10px] font-mono text-violet-400/40 bg-violet-500/[0.08] px-2 py-0.5 rounded">TypeScript</span>
-              </div>
-            </div>
-            {/* Code */}
-            <div className="p-6 font-mono text-[13px] leading-7 min-h-[220px]">
-              {CODE_SNIPPET.split("\n").slice(0, codeVisible).map((line, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.18 }}
-                  className="flex gap-4"
-                >
-                  <span className="text-white/15 select-none w-4 text-right flex-shrink-0 text-[11px] mt-0.5">{i + 1}</span>
-                  <span className={
-                    line.startsWith("//") ? "text-white/25" :
-                    line.includes("const") || line.includes("model") || line.includes("provider") || line.includes("systemPrompt") ? "text-violet-300/90" :
-                    line.includes('"') ? "text-emerald-300/80" :
-                    "text-white/60"
-                  }>{line || "\u00A0"}</span>
-                </motion.div>
-              ))}
-              {codeVisible < CODE_SNIPPET.split("\n").length && (
-                <motion.span
-                  animate={{ opacity: [1, 0] }}
-                  transition={{ duration: 0.6, repeat: Infinity }}
-                  className="inline-block w-0.5 h-4 bg-violet-400/70 ml-12 align-middle"
-                />
-              )}
-            </div>
-            {/* Status bar */}
-            <div className="flex items-center justify-between px-5 py-2.5 border-t border-white/[0.04]" style={{ background: "#0b0b18" }}>
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-[10px] font-mono text-white/20">streaming · 47 tok/s</span>
-              </div>
-              <span className="text-[10px] font-mono text-violet-400/35">NJIRLAH AI</span>
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Stats */}
-      <section className="relative z-10 border-y border-white/[0.04]" style={{ background: "rgba(255,255,255,0.01)" }}>
-        <div className="max-w-6xl mx-auto px-8 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
-          {[
-            { n: "50+",  l: "AI Models"        },
-            { n: "3",    l: "Dev Platforms"     },
-            { n: "0",    l: "Setup Required"    },
-            { n: "100%", l: "Privacy Preserved" },
-          ].map((s) => (
-            <motion.div
-              key={s.l}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="text-center"
-            >
-              <p className="text-4xl font-black mb-1.5" style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                background: "linear-gradient(135deg, #a78bfa, #f472b6)",
-                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-              }}>{s.n}</p>
-              <p className="text-sm text-white/35 font-medium">{s.l}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Provider marquee */}
-      <section className="relative z-10 py-14">
-        <p className="text-center text-[10px] font-mono text-white/20 tracking-[0.3em] uppercase mb-6">Supported Providers</p>
-        <div className="relative overflow-hidden">
-          <div className="absolute left-0 inset-y-0 w-24 z-10" style={{ background: "linear-gradient(90deg, #070711, transparent)" }} />
-          <div className="absolute right-0 inset-y-0 w-24 z-10" style={{ background: "linear-gradient(-90deg, #070711, transparent)" }} />
-          <motion.div
-            animate={{ x: "-50%" }}
-            transition={{ duration: 35, repeat: Infinity, ease: "linear" }}
-            className="flex gap-3 whitespace-nowrap"
+            <Plus size={14} className="text-violet-400" />
+            Create something new
+          </motion.button>
+          <motion.button
+            whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/40 hover:text-white/70 transition-colors"
           >
-            {[...PROVIDERS, ...PROVIDERS].map((p, i) => (
-              <span key={i} className="flex-shrink-0 text-[11px] font-mono text-white/25 border border-white/[0.06] px-4 py-2 rounded-full hover:text-white/50 hover:border-white/[0.12] transition-colors cursor-default">{p}</span>
-            ))}
-          </motion.div>
+            <Upload size={14} />
+            Import code or design
+          </motion.button>
         </div>
-      </section>
 
-      {/* Features grid */}
-      <section className="relative z-10 max-w-6xl mx-auto px-8 py-20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-14"
-        >
-          <h2 className="text-4xl font-black mb-4" style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            background: "linear-gradient(135deg, #fff 0%, #a78bfa 100%)",
-            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-          }}>
-            Everything you need to ship
-          </h2>
-          <p className="text-white/40 max-w-md mx-auto">Purpose-built for developers who move fast and don't need fluff.</p>
-        </motion.div>
+        <div className="h-px bg-white/[0.05] mx-3 mb-2" />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {FEATURES.map((f, i) => (
-            <motion.div
-              key={f.label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.07, duration: 0.45 }}
-              whileHover={{ y: -3 }}
-              className="group p-6 rounded-2xl border border-white/[0.06] bg-white/[0.015] cursor-default transition-all duration-300 hover:border-white/[0.1]"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ background: `${f.color}15`, border: `1px solid ${f.color}25` }}>
-                  <f.icon size={18} style={{ color: f.color }} />
-                </div>
-                <span className="text-xs font-mono font-bold tracking-widest uppercase"
-                  style={{ color: `${f.color}80` }}>{f.label}</span>
-              </div>
-              <p className="text-[13px] text-white/45 leading-relaxed">{f.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="relative z-10 max-w-4xl mx-auto px-8 py-20 text-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.97 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="relative p-14 rounded-3xl overflow-hidden border border-white/[0.07]"
-          style={{ background: "linear-gradient(135deg, rgba(109,40,217,0.1), rgba(236,72,153,0.05))" }}
-        >
-          <div className="absolute inset-0"
-            style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(109,40,217,0.15), transparent 60%)" }} />
-          <div className="relative z-10">
-            <h2 className="text-4xl font-black mb-4" style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              background: "linear-gradient(135deg, #a78bfa, #ec4899, #22d3ee)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-            }}>
-              Ready to vibe code?
-            </h2>
-            <p className="text-white/40 mb-10 text-lg">No signup. No credit card. Paste your API key and ship.</p>
+        {/* Nav top */}
+        <nav className="flex-1 px-3 py-2 space-y-0.5">
+          {NAV_TOP.map((item) => (
             <motion.button
-              onClick={launch}
-              whileHover={{ scale: 1.04, boxShadow: "0 0 40px rgba(109,40,217,0.45)" }}
+              key={item.label}
+              whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                item.active ? "text-white/90 bg-white/[0.06]" : "text-white/40 hover:text-white/75"
+              }`}
+            >
+              <item.icon size={14} className={item.active ? "text-violet-400" : ""} />
+              {item.label}
+            </motion.button>
+          ))}
+        </nav>
+
+        {/* Spacer + bottom nav */}
+        <div className="px-3 py-3 space-y-0.5 border-t border-white/[0.04]">
+          {NAV_BOTTOM.map((item) => (
+            <motion.button
+              key={item.label}
+              whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-white/35 hover:text-white/65 transition-colors"
+            >
+              <item.icon size={14} />
+              {item.label}
+            </motion.button>
+          ))}
+
+          {/* Plan */}
+          <div className="mt-3 px-3 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+            <p className="text-[11px] font-semibold text-white/50 mb-2">Your Starter Plan</p>
+            <div className="space-y-2">
+              <div>
+                <div className="flex justify-between text-[10px] text-white/35 mb-1">
+                  <span>Agent credits</span><span>50% used</span>
+                </div>
+                <div className="h-1 rounded-full bg-white/[0.07]">
+                  <div className="h-full w-1/2 rounded-full" style={{ background: "linear-gradient(90deg, #6d28d9, #a855f7)" }} />
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-[10px] text-white/35 mb-1">
+                  <span>Cloud credits</span><span>0% used</span>
+                </div>
+                <div className="h-1 rounded-full bg-white/[0.07]" />
+              </div>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(109,40,217,0.35)" }}
               whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-3 px-10 py-4 rounded-2xl text-white font-bold text-base transition-all"
+              className="mt-3 w-full py-2 rounded-lg text-[11px] font-semibold text-white transition-all"
               style={{ background: "linear-gradient(135deg, #6d28d9, #7c3aed)" }}
             >
-              <Zap size={18} />
-              Start Vibing Free
-              <ArrowRight size={16} />
+              + Upgrade to NJIRLAH Core
             </motion.button>
           </div>
-        </motion.div>
-      </section>
-
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/[0.05] py-8 px-8">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-md flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #6d28d9, #a855f7)" }}>
-              <Zap size={10} className="text-white" />
-            </div>
-            <span className="text-sm font-bold text-white/40" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>NJIRLAH AI</span>
-          </div>
-          <p className="text-[11px] font-mono text-white/20">© 2025 · Built with React, Vite, Tailwind CSS</p>
-          <p className="text-[11px] font-mono text-white/20">All data stays on your device</p>
         </div>
-      </footer>
+      </div>
+
+      {/* ── Main Content ── */}
+      <div className="flex-1 flex flex-col overflow-y-auto">
+        <div className="flex-1 flex flex-col items-center justify-start px-8 pt-20 pb-16 min-h-full">
+
+          {/* Greeting */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="text-center mb-8"
+          >
+            <h1 className="text-3xl font-bold text-white/90 mb-1">
+              Hi there, what do you want to make?
+            </h1>
+          </motion.div>
+
+          {/* Workspace badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.08 }}
+            className="mb-5"
+          >
+            <button className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-white/65 hover:bg-white/[0.06] transition-colors">
+              <div className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold text-white"
+                style={{ background: "linear-gradient(135deg, #6d28d9, #a855f7)" }}>N</div>
+              NJIRLAH's Workspace
+              <ChevronRight size={12} className="text-white/30" />
+            </button>
+          </motion.div>
+
+          {/* Input box */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.12 }}
+            className="w-full max-w-2xl mb-5"
+          >
+            <div className="relative rounded-2xl border border-white/[0.1] overflow-hidden"
+              style={{ background: "#1a1a1a", boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 24px 48px rgba(0,0,0,0.4)" }}>
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
+                placeholder="Describe your idea, NJIRLAH will bring it to life..."
+                rows={1}
+                className="w-full px-5 pt-4 pb-2 text-sm text-white/85 placeholder-white/25 bg-transparent resize-none focus:outline-none leading-relaxed"
+                style={{ maxHeight: "160px", fontFamily: "inherit" }}
+              />
+              <div className="flex items-center justify-between px-4 py-3">
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="p-1.5 rounded-lg text-white/25 hover:text-white/55 transition-colors"
+                >
+                  <Plus size={14} />
+                </motion.button>
+
+                <div className="flex items-center gap-2">
+                  <button className="flex items-center gap-1.5 text-xs text-white/35 hover:text-white/60 transition-colors px-2 py-1 rounded-lg hover:bg-white/[0.05]">
+                    <Zap size={11} className="text-violet-400" />
+                    Agent
+                    <ChevronRight size={10} />
+                  </button>
+                  <motion.button
+                    onClick={() => handleSubmit()}
+                    whileHover={{ scale: 1.05, boxShadow: "0 0 16px rgba(109,40,217,0.4)" }}
+                    whileTap={{ scale: 0.95 }}
+                    disabled={!input.trim()}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center transition-all disabled:opacity-30"
+                    style={{ background: input.trim() ? "linear-gradient(135deg, #6d28d9, #7c3aed)" : "rgba(255,255,255,0.07)" }}
+                  >
+                    <ArrowUp size={14} className="text-white" />
+                  </motion.button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Mode carousel */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.18 }}
+            className="flex items-center gap-2 mb-6"
+          >
+            <motion.button
+              onClick={() => setModesOffset((v) => Math.max(0, v - 1))}
+              disabled={!canLeft}
+              whileTap={{ scale: 0.9 }}
+              className="p-1.5 rounded-full border border-white/[0.08] text-white/35 hover:text-white/65 disabled:opacity-20 transition-all hover:border-white/[0.15] hover:bg-white/[0.05]"
+            >
+              <ChevronLeft size={13} />
+            </motion.button>
+
+            <div className="flex items-center gap-2 overflow-hidden">
+              <AnimatePresence mode="popLayout">
+                {MODES.slice(modesOffset, modesOffset + VISIBLE).map((m) => (
+                  <motion.button
+                    key={m.label}
+                    onClick={() => handleModeClick(m)}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    whileHover={{ y: -2, backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.12)" }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center gap-2 px-4 py-3.5 rounded-2xl border border-white/[0.07] bg-white/[0.03] text-white/55 hover:text-white/85 transition-all min-w-[80px]"
+                  >
+                    <m.icon size={20} className={m.label === "Chat AI" ? "text-violet-400" : "text-white/50"} />
+                    <span className="text-[11px] font-medium whitespace-nowrap">{m.label}</span>
+                  </motion.button>
+                ))}
+              </AnimatePresence>
+            </div>
+
+            <motion.button
+              onClick={() => setModesOffset((v) => Math.min(MODES.length - VISIBLE, v + 1))}
+              disabled={!canRight}
+              whileTap={{ scale: 0.9 }}
+              className="p-1.5 rounded-full border border-white/[0.08] text-white/35 hover:text-white/65 disabled:opacity-20 transition-all hover:border-white/[0.15] hover:bg-white/[0.05]"
+            >
+              <ChevronRight size={13} />
+            </motion.button>
+          </motion.div>
+
+          {/* Example prompts */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.25, duration: 0.4 }}
+            className="flex items-center gap-2 flex-wrap justify-center mb-16"
+          >
+            <span className="text-xs text-white/25 flex items-center gap-1.5">
+              <Sparkles size={11} /> Try an example prompt:
+            </span>
+            {EXAMPLE_PROMPTS.map((p) => (
+              <motion.button
+                key={p}
+                onClick={() => handleSubmit(p)}
+                whileHover={{ backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.12)" }}
+                whileTap={{ scale: 0.97 }}
+                className="px-3 py-1.5 rounded-full border border-white/[0.07] text-xs text-white/45 hover:text-white/75 transition-all"
+              >
+                {p}
+              </motion.button>
+            ))}
+          </motion.div>
+
+          {/* Recent Projects */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.45 }}
+            className="w-full max-w-4xl"
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-base font-semibold text-white/65">Your recent Projects</h2>
+              <button className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300 transition-colors">
+                View All <ArrowRight size={12} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {RECENT_PROJECTS.map((proj) => (
+                <motion.button
+                  key={proj.name}
+                  onClick={() => navigate("/app")}
+                  whileHover={{ y: -2, borderColor: "rgba(255,255,255,0.1)" }}
+                  whileTap={{ scale: 0.98 }}
+                  className="text-left p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02] transition-all group"
+                >
+                  {/* Preview area */}
+                  <div className="h-28 rounded-xl mb-4 overflow-hidden flex items-center justify-center"
+                    style={{ background: `linear-gradient(135deg, ${proj.color}22, ${proj.color}08)`, border: `1px solid ${proj.color}20` }}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold"
+                      style={{ background: `${proj.color}30`, color: proj.color }}>
+                      {proj.name.charAt(0).toUpperCase()}
+                    </div>
+                  </div>
+                  <p className="text-sm font-semibold text-white/75 mb-1 group-hover:text-white/95 transition-colors">{proj.name}</p>
+                  <p className="text-xs text-white/30">{proj.desc}</p>
+                </motion.button>
+              ))}
+
+              {/* New project card */}
+              <motion.button
+                onClick={() => navigate("/app")}
+                whileHover={{ y: -2, borderColor: "rgba(109,40,217,0.3)", backgroundColor: "rgba(109,40,217,0.04)" }}
+                whileTap={{ scale: 0.98 }}
+                className="text-left p-5 rounded-2xl border border-dashed border-white/[0.08] transition-all group flex flex-col items-center justify-center h-[168px] gap-3"
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center border border-dashed border-white/[0.12] group-hover:border-violet-500/40 transition-colors">
+                  <Plus size={18} className="text-white/25 group-hover:text-violet-400 transition-colors" />
+                </div>
+                <p className="text-sm text-white/30 group-hover:text-white/55 transition-colors">Create new project</p>
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      </div>
     </div>
   );
 }
