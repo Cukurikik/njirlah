@@ -17,6 +17,7 @@ import { SettingsModal } from "@/components/chat/SettingsModal";
 import { DevPanel } from "@/components/dev/DevPanel";
 import { AppearanceApplier } from "@/components/layout/AppearanceApplier";
 import { CompareView } from "@/components/compare/CompareView";
+import AnimationsPage from "@/pages/AnimationsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 1000 * 60 * 5 } },
@@ -115,10 +116,16 @@ function AppInner() {
   );
 }
 
+function AppRouter() {
+  const isAnimations = window.location.pathname.endsWith("/animations");
+  if (isAnimations) return <AnimationsPage />;
+  return <AppInner />;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AppInner />
+      <AppRouter />
     </QueryClientProvider>
   );
 }

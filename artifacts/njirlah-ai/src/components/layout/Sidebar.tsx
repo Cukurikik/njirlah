@@ -217,6 +217,26 @@ export function Sidebar({ onOpenApiKey, onExport, onOpenCustomInstructions, mobi
 
       {/* Footer actions */}
       <div className="px-2 py-2 border-t border-white/[0.05] space-y-0.5">
+        <motion.button
+          onClick={() => { window.history.pushState({}, "", "/animations"); window.location.reload(); }}
+          whileHover={{ backgroundColor: "rgba(158,158,255,0.06)" }}
+          whileTap={{ scale: 0.97 }}
+          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[11px] transition-colors text-violet-400/60 hover:text-violet-400 ${collapsed ? "justify-center" : ""}`}
+        >
+          <span style={{ fontSize: 12 }}>✦</span>
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="whitespace-nowrap font-mono"
+              >
+                Animation Showcase
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
         {[
           {
             icon: <SlidersHorizontal size={12} />,

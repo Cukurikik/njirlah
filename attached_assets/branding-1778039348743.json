@@ -1,0 +1,142 @@
+{
+  "colorScheme": "light",
+  "fonts": [
+    {
+      "family": "Inter",
+      "role": "body"
+    },
+    {
+      "family": "Arial",
+      "role": "unknown"
+    },
+    {
+      "family": "Space Mono",
+      "role": "monospace"
+    },
+    {
+      "family": "Roboto",
+      "role": "unknown"
+    }
+  ],
+  "colors": {
+    "primary": "#363645",
+    "accent": "#FDA5A5",
+    "background": "#FAFAFA",
+    "textPrimary": "#1B1A22",
+    "link": "#FDA5A5"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "Inter",
+      "heading": "Inter"
+    },
+    "fontStacks": {
+      "heading": [
+        "Inter",
+        "-apple-system",
+        "system-ui",
+        "sans-serif"
+      ],
+      "body": [
+        "Inter",
+        "-apple-system",
+        "system-ui",
+        "sans-serif"
+      ],
+      "paragraph": [
+        "Space Mono",
+        "monospace"
+      ]
+    },
+    "fontSizes": {
+      "h1": "48px",
+      "h2": "32px",
+      "body": "14px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 6,
+    "borderRadius": "4px"
+  },
+  "components": {
+    "buttonPrimary": {
+      "background": "transparent",
+      "textColor": "#1B1A22",
+      "borderColor": "#1B1A22",
+      "borderRadius": "8px",
+      "borderRadiusCorners": {
+        "topLeft": "8px",
+        "topRight": "8px",
+        "bottomRight": "8px",
+        "bottomLeft": "8px"
+      },
+      "shadow": "none"
+    },
+    "buttonSecondary": {
+      "background": "#F0F2F4",
+      "textColor": "#1B1A22",
+      "borderRadius": "8px",
+      "borderRadiusCorners": {
+        "topLeft": "8px",
+        "topRight": "8px",
+        "bottomRight": "8px",
+        "bottomLeft": "8px"
+      },
+      "shadow": "none"
+    }
+  },
+  "images": {
+    "favicon": null,
+    "ogImage": null,
+    "logoHref": "File saved at: attached_assets/logoHref.html"
+  },
+  "__llm_logo_reasoning": {
+    "selectedIndex": 0,
+    "reasoning": "Selected #0 because it is located in the header, links to the homepage, and matches the brand inferred from the URL and page title ('react-spring').",
+    "confidence": 0.85,
+    "source": "llm"
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": 0,
+      "text": "Get started",
+      "reasoning": "Button #0 ('Get started') is the primary CTA due to its action-oriented text and distinct border, making it stand out as the main call-to-action despite its transparent background."
+    },
+    "secondary": {
+      "index": 1,
+      "text": "Enable light mode",
+      "reasoning": "Button #1 ('Enable light mode') is selected as secondary because it has a different background color (#F0F2F4) and serves a less critical function compared to the primary CTA."
+    },
+    "confidence": 0.9
+  },
+  "personality": {
+    "tone": "modern",
+    "energy": "medium",
+    "targetAudience": "developers"
+  },
+  "designSystem": {
+    "framework": "custom",
+    "componentLibrary": ""
+  },
+  "confidence": {
+    "buttons": 0.9,
+    "colors": 0.9,
+    "overall": 0.9
+  },
+  "__llm_metadata": {
+    "logoSelection": {
+      "llmCalled": true,
+      "llmSucceeded": true,
+      "finalSource": "llm",
+      "rawLogoSelection": {
+        "selectedLogoIndex": 0,
+        "selectedLogoReasoning": "Selected #0 because it is located in the header, links to the homepage, and matches the brand inferred from the URL and page title ('react-spring').",
+        "confidence": 0.85
+      }
+    },
+    "buttonClassification": {
+      "llmCalled": true,
+      "llmSucceeded": true
+    }
+  }
+}

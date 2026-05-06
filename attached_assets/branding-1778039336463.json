@@ -1,0 +1,154 @@
+{
+  "colorScheme": "dark",
+  "fonts": [
+    {
+      "family": "DIN",
+      "role": "heading"
+    },
+    {
+      "family": "Helvetica Neue",
+      "role": "body"
+    }
+  ],
+  "colors": {
+    "primary": "#FF4B4B",
+    "secondary": "#00FFAA",
+    "accent": "#D5D3D1",
+    "background": "#252423",
+    "textPrimary": "#252423",
+    "link": "#FFA828"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "Helvetica Neue",
+      "heading": "DIN"
+    },
+    "fontStacks": {
+      "heading": [
+        "DIN",
+        "Helvetica Neue",
+        "Helvetica",
+        "Arial",
+        "sans-serif"
+      ],
+      "body": [
+        "DIN",
+        "Helvetica Neue",
+        "Helvetica",
+        "Arial",
+        "sans-serif"
+      ],
+      "paragraph": [
+        "DIN",
+        "Helvetica Neue",
+        "Helvetica",
+        "Arial",
+        "sans-serif"
+      ]
+    },
+    "fontSizes": {
+      "h1": "16px",
+      "h2": "64px",
+      "body": "20px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "1px"
+  },
+  "components": {
+    "input": {
+      "background": "#353433",
+      "textColor": "#F6F4F2",
+      "borderColor": null,
+      "borderRadius": "4px",
+      "borderRadiusCorners": {
+        "topLeft": "4px",
+        "topRight": "0px",
+        "bottomRight": "0px",
+        "bottomLeft": "4px"
+      },
+      "shadow": "none"
+    },
+    "buttonPrimary": {
+      "background": "#D5D3D1",
+      "textColor": "#353433",
+      "borderRadius": "4px",
+      "borderRadiusCorners": {
+        "topLeft": "0px",
+        "topRight": "4px",
+        "bottomRight": "4px",
+        "bottomLeft": "0px"
+      },
+      "shadow": "none"
+    },
+    "buttonSecondary": {
+      "background": "transparent",
+      "textColor": "#93908E",
+      "borderColor": "#625D5B",
+      "borderRadius": "4px",
+      "borderRadiusCorners": {
+        "topLeft": "4px",
+        "topRight": "4px",
+        "bottomRight": "4px",
+        "bottomLeft": "4px"
+      },
+      "shadow": "none"
+    }
+  },
+  "images": {
+    "favicon": "File saved at: attached_assets/favicon.png",
+    "ogImage": "File saved at: attached_assets/ogImage.png",
+    "logoHref": "File saved at: attached_assets/logoHref.html",
+    "logoAlt": "anime.js logo v4"
+  },
+  "__llm_logo_reasoning": {
+    "selectedIndex": 0,
+    "reasoning": "Selected #0 because it is visible, located in the header, links to the homepage, and matches the brand name 'Anime.js'.",
+    "confidence": 0.95,
+    "source": "llm"
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": 1,
+      "text": "Subscribe",
+      "reasoning": "Button #2 ('Subscribe') has a distinct red/orange background (#D5D3D1), making it stand out as a primary call-to-action compared to the other buttons, which are mostly dark."
+    },
+    "secondary": {
+      "index": 15,
+      "text": "Learn more",
+      "reasoning": "Button #0 ('Learn more') has a transparent background, making it suitable as a secondary action, distinct from the primary button's color group."
+    },
+    "confidence": 0.95
+  },
+  "personality": {
+    "tone": "modern",
+    "energy": "medium",
+    "targetAudience": "developers and designers interested in animation"
+  },
+  "designSystem": {
+    "framework": "custom",
+    "componentLibrary": ""
+  },
+  "confidence": {
+    "buttons": 0.95,
+    "colors": 0.9,
+    "overall": 0.925
+  },
+  "__llm_metadata": {
+    "logoSelection": {
+      "llmCalled": true,
+      "llmSucceeded": true,
+      "finalSource": "llm",
+      "rawLogoSelection": {
+        "selectedLogoIndex": 0,
+        "selectedLogoReasoning": "Selected #0 because it is visible, located in the header, links to the homepage, and matches the brand name 'Anime.js'.",
+        "confidence": 0.95
+      }
+    },
+    "buttonClassification": {
+      "llmCalled": true,
+      "llmSucceeded": true
+    }
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "colorScheme": "dark",
+  "fonts": [
+    {
+      "family": "Inter Variable",
+      "role": "body"
+    },
+    {
+      "family": "TASA Orbiter VF Variable",
+      "role": "unknown"
+    }
+  ],
+  "colors": {
+    "primary": "#9E9EFF",
+    "secondary": "#8DF0CC",
+    "accent": "#8DF0CC",
+    "background": "#080808",
+    "textPrimary": "#080808",
+    "link": "#B207FF"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "Inter Variable",
+      "heading": "Inter Variable"
+    },
+    "fontStacks": {
+      "heading": [
+        "TASA Orbiter VF Variable",
+        "sans-serif"
+      ],
+      "body": [
+        "sans-serif"
+      ],
+      "paragraph": [
+        "Inter Variable",
+        "sans-serif"
+      ]
+    },
+    "fontSizes": {
+      "h1": "38px",
+      "h2": "38px",
+      "body": "13px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 10,
+    "borderRadius": "10px"
+  },
+  "components": {
+    "buttonPrimary": {
+      "background": "#8DF0CC",
+      "textColor": "#FFFFFF",
+      "borderRadius": "8px",
+      "borderRadiusCorners": {
+        "topLeft": "8px",
+        "topRight": "8px",
+        "bottomRight": "8px",
+        "bottomLeft": "8px"
+      },
+      "shadow": "none"
+    },
+    "buttonSecondary": {
+      "background": "#F5F5F5",
+      "textColor": "#9E9EFF",
+      "borderRadius": "8px",
+      "borderRadiusCorners": {
+        "topLeft": "8px",
+        "topRight": "8px",
+        "bottomRight": "8px",
+        "bottomLeft": "8px"
+      },
+      "shadow": "none"
+    }
+  },
+  "images": {
+    "favicon": "File saved at: attached_assets/favicon.png",
+    "ogImage": "File saved at: attached_assets/ogImage.png"
+  },
+  "__llm_logo_reasoning": {
+    "selectedIndex": 0,
+    "reasoning": "Selected #0 because it is visible, located in the header, and matches the brand inferred from the URL and page title.",
+    "confidence": 0.8,
+    "source": "llm"
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": 11,
+      "text": "Explore Motion+ features",
+      "reasoning": "Button #2 has a vibrant green background (#8DF0CC), which is a brand color, and the text 'Explore Motion+ features' suggests a primary call-to-action."
+    },
+    "secondary": {
+      "index": 1,
+      "text": "Get started with React animation",
+      "reasoning": "Button #0 has a light background (#F5F5F5) and the text 'Get started with React animation', making it suitable as a secondary CTA."
+    },
+    "confidence": 0.95
+  },
+  "personality": {
+    "tone": "modern",
+    "energy": "high",
+    "targetAudience": "developers"
+  },
+  "designSystem": {
+    "framework": "custom",
+    "componentLibrary": ""
+  },
+  "confidence": {
+    "buttons": 0.95,
+    "colors": 0.9,
+    "overall": 0.925
+  },
+  "__llm_metadata": {
+    "logoSelection": {
+      "llmCalled": true,
+      "llmSucceeded": true,
+      "finalSource": "llm",
+      "rawLogoSelection": {
+        "selectedLogoIndex": 0,
+        "selectedLogoReasoning": "Selected #0 because it is visible, located in the header, and matches the brand inferred from the URL and page title.",
+        "confidence": 0.8
+      }
+    },
+    "buttonClassification": {
+      "llmCalled": true,
+      "llmSucceeded": true
+    }
+  }
+}

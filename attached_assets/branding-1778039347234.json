@@ -1,0 +1,134 @@
+{
+  "colorScheme": "dark",
+  "fonts": [
+    {
+      "family": "Mori",
+      "role": "unknown"
+    },
+    {
+      "family": "Arial",
+      "role": "unknown"
+    },
+    {
+      "family": "Helvetica",
+      "role": "unknown"
+    },
+    {
+      "family": "Segoe UI",
+      "role": "unknown"
+    },
+    {
+      "family": "Roboto",
+      "role": "unknown"
+    }
+  ],
+  "colors": {
+    "primary": "#FFFCE1",
+    "secondary": "#BFC7D5",
+    "accent": "#BBBAA6",
+    "background": "#0E100F",
+    "textPrimary": "#0E100F",
+    "link": "#BBBAA6"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "Mori",
+      "heading": "Mori"
+    },
+    "fontStacks": {
+      "heading": [
+        "Mori",
+        "Arial",
+        "Helvetica",
+        "Segoe UI",
+        "Roboto",
+        "Open Sans",
+        "sans-serif"
+      ],
+      "body": [
+        "Mori",
+        "Arial",
+        "Helvetica",
+        "Segoe UI",
+        "Roboto",
+        "Open Sans",
+        "sans-serif"
+      ],
+      "paragraph": [
+        "Mori",
+        "Arial",
+        "Helvetica",
+        "Segoe UI",
+        "Roboto",
+        "Open Sans",
+        "sans-serif"
+      ]
+    },
+    "fontSizes": {
+      "h1": "32px",
+      "h2": "27.2px",
+      "body": "18px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "6px"
+  },
+  "components": {
+    "input": {
+      "background": "transparent",
+      "textColor": "#0E100F",
+      "borderColor": null,
+      "borderRadius": "0px",
+      "borderRadiusCorners": {
+        "topLeft": "0px",
+        "topRight": "0px",
+        "bottomRight": "0px",
+        "bottomLeft": "0px"
+      },
+      "shadow": "none"
+    }
+  },
+  "images": {
+    "favicon": "File saved at: attached_assets/favicon.png",
+    "ogImage": "File saved at: attached_assets/ogImage.png",
+    "logoHref": "File saved at: attached_assets/logoHref.html",
+    "logoAlt": "GSAP"
+  },
+  "__llm_logo_reasoning": {
+    "selectedIndex": 0,
+    "reasoning": "Selected #0 because it is visible, located in the header, medium-sized, and links to the homepage, matching the brand 'GSAP'.",
+    "confidence": 0.9,
+    "source": "llm"
+  },
+  "personality": {
+    "tone": "modern",
+    "energy": "medium",
+    "targetAudience": "developers"
+  },
+  "designSystem": {
+    "framework": "unknown",
+    "componentLibrary": ""
+  },
+  "confidence": {
+    "buttons": 0,
+    "colors": 0.9,
+    "overall": 0.45
+  },
+  "__llm_metadata": {
+    "logoSelection": {
+      "llmCalled": true,
+      "llmSucceeded": true,
+      "finalSource": "llm",
+      "rawLogoSelection": {
+        "selectedLogoIndex": 0,
+        "selectedLogoReasoning": "Selected #0 because it is visible, located in the header, medium-sized, and links to the homepage, matching the brand 'GSAP'.",
+        "confidence": 0.9
+      }
+    },
+    "buttonClassification": {
+      "llmCalled": false,
+      "llmSucceeded": false
+    }
+  }
+}

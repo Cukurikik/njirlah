@@ -48,6 +48,7 @@ Required env vars:
 - Live Code Preview panel for HTML/TSX output
 - Custom instructions, export chat, appearance settings
 - API key management with local AES-GCM encryption
+- **Animation Showcase** (`/animations`) — 50+ live animation demos organized in 8 categories: Basic, Loaders, Text & Path, Interactive, Scroll, Cursor, iOS, Advanced. All powered by Framer Motion 12. Accessible via sidebar "Animation Showcase" link.
 
 ## Gotchas
 
