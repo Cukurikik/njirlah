@@ -1,8 +1,7 @@
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Activity, Code2, Menu, Settings, Command } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
-import { AILogo } from "@/components/ui/AILogo";
-import { GlitchText } from "@/components/ui/TypewriterText";
+import { NJIRLAHLogo } from "@/components/layout/NJIRLAHLogo";
 import { ApiStatusBadge } from "@/components/chat/ApiStatusBadge";
 
 interface HeaderProps {
@@ -46,18 +45,7 @@ export function Header({ onToggleDevPanel, devPanelOpen, onOpenMobileSidebar, on
       </motion.button>
 
       {/* Logo */}
-      <motion.div className="flex items-center gap-2 select-none shrink-0 group">
-        <motion.div
-          whileHover={{ scale: 1.08 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        >
-          <AILogo size={22} animated />
-        </motion.div>
-        <GlitchText
-          text="NJIRLAH"
-          className="text-[11px] font-black tracking-[0.22em] text-white/45 group-hover:text-white/70 transition-colors font-orbitron hidden sm:block"
-        />
-      </motion.div>
+      <NJIRLAHLogo size={22} showText className="shrink-0" />
 
       {/* Spacer */}
       <div className="flex-1" />

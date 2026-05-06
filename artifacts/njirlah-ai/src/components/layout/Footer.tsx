@@ -14,16 +14,16 @@ function AnimatedHeart() {
 
 export function Footer() {
   return (
-    <footer className="flex-shrink-0 border-t border-white/[0.06] py-3 px-6 flex items-center justify-between">
-      <p className="text-[11px] text-white/20 font-mono">
+    <footer className="flex-shrink-0 border-t border-white/[0.06] py-3 px-6 flex items-center justify-between gap-4 flex-wrap">
+      <p className="text-[11px] text-white/20 font-mono whitespace-nowrap">
         NJIRLAH AI &copy; {new Date().getFullYear()}
       </p>
-      <p className="text-[11px] text-white/25 flex items-center gap-1.5 font-mono">
-        built with <AnimatedHeart /> by{" "}
-        <span className="text-white/45 font-medium">Andikaa Saputraa</span>
+      <p className="text-[11px] flex items-center gap-1.5 font-bold text-pink-400/80 flex-1 justify-center whitespace-nowrap">
+        Dibuat dengan <AnimatedHeart /> oleh{" "}
+        <span className="underline decoration-violet-400/50 text-pink-300">Andikaa Saputraa</span>
       </p>
-      <p className="text-[11px] text-white/15 font-mono hidden md:block">
-        njir lah keren
+      <p className="text-[11px] text-white/15 font-mono hidden md:block whitespace-nowrap">
+        membangun masa depan AI yang bebas ✨
       </p>
     </footer>
   );

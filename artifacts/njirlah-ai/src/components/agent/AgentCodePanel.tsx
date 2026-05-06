@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Square, ChevronDown, RotateCcw } from "lucide-react";
+import { Send, Square, ChevronDown, RotateCcw, Download } from "lucide-react";
 import { FileTree } from "./FileTree";
 import { CodeEditor } from "./CodeEditor";
 import { useAgentStore } from "@/store/agent-store";
 import { useApiKeyStore } from "@/store/api-key-store";
 import { useModelStore } from "@/store/model-store";
+import confetti from "canvas-confetti";
+import JSZip from "jszip";
 
 const API_BASE = "/api";
 
@@ -16,13 +18,32 @@ const DEFAULT_PROMPTS = [
   "Portfolio pribadi dengan galeri proyek",
 ];
 
+async function downloadAsZip(files: Record<string, { content?: string; isDone?: boolean }>, fileOrder: string[]) {
+  const zip = new JSZip();
+  for (const filename of fileOrder) {
+    const file = files[filename];
+    if (file?.content) {
+      zip.file(filename, file.content);
+    }
+  }
+  const blob = await zip.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "njirlah-project.zip";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function AgentCodePanel() {
   const [prompt, setPrompt] = useState("");
   const [modelSource, setModelSource] = useState<"openrouter" | "cloudflare">("cloudflare");
   const [selectedModel, setSelectedModel] = useState("");
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const abortRef = { current: null as AbortController | null };
+  const prevStatusRef = useRef<string>("idle");
 
   const {
     files,
@@ -46,6 +67,47 @@ export function AgentCodePanel() {
 
   const { openRouterKey } = useApiKeyStore();
   const { cloudflareModels, openrouterModels } = useModelStore();
+
+  useEffect(() => {
+    if (agentStatus === "done" && prevStatusRef.current !== "done") {
+      confetti({
+        particleCount: 180,
+        spread: 80,
+        origin: { y: 0.55 },
+        colors: ["#A855F7", "#06B6D4", "#EC4899", "#8B5CF6", "#F59E0B"],
+        zIndex: 9999,
+      });
+      setTimeout(() => {
+        confetti({
+          particleCount: 80,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.6 },
+          colors: ["#A855F7", "#06B6D4", "#EC4899"],
+          zIndex: 9999,
+        });
+        confetti({
+          particleCount: 80,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.6 },
+          colors: ["#A855F7", "#06B6D4", "#EC4899"],
+          zIndex: 9999,
+        });
+      }, 300);
+    }
+    prevStatusRef.current = agentStatus;
+  }, [agentStatus]);
+
+  const handleDownload = async () => {
+    if (isDownloading || fileOrder.length === 0) return;
+    setIsDownloading(true);
+    try {
+      await downloadAsZip(files, fileOrder);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const availableModels = modelSource === "openrouter" ? openrouterModels : cloudflareModels;
 
@@ -176,6 +238,26 @@ export function AgentCodePanel() {
           </h2>
 
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Download ZIP — visible when files exist */}
+            <AnimatePresence>
+              {fileOrder.length > 0 && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.85 }}
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                  whileHover={{ scale: 1.05, boxShadow: "0 0 12px rgba(139,92,246,0.3)" }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-1.5 text-[11px] text-violet-300 border border-violet-500/30 bg-violet-500/10 rounded-lg px-2.5 py-1.5 hover:bg-violet-500/20 transition-colors disabled:opacity-50"
+                  title="Download all files as ZIP"
+                >
+                  <Download size={11} />
+                  {isDownloading ? "..." : "ZIP"}
+                </motion.button>
+              )}
+            </AnimatePresence>
+
             {/* New Generation button — only visible when there's a completed/errored run */}
             <AnimatePresence>
               {!isGenerating && fileOrder.length > 0 && (

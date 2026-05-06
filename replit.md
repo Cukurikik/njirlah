@@ -60,6 +60,8 @@ Required secrets (all already set): `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOK
 - Side-by-side compare mode, live code preview panel, command palette (⌘K)
 - 50+ Framer Motion animation demos across 8 categories
 - AES-GCM encrypted API key storage, voice input, file attachment, export chat
+- Agent Code Generator with canvas-confetti celebration on completion + JSZip download
+- NJIRLAHLogo: neon unicorn SVG with glitch text hover, 3-click easter egg dancing unicorn overlay
 
 ## User preferences
 

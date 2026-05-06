@@ -5,7 +5,7 @@ import { useChatStore } from "@/store/chat-store";
 import { useApiKeyStore } from "@/store/api-key-store";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
-import { AILogo } from "@/components/ui/AILogo";
+import { NJIRLAHLogo } from "@/components/layout/NJIRLAHLogo";
 
 interface SidebarProps {
   onOpenApiKey: () => void;
@@ -98,10 +98,7 @@ export function Sidebar({ onOpenApiKey, onExport, onOpenCustomInstructions, mobi
               transition={{ duration: 0.15 }}
               className="flex items-center gap-2"
             >
-              <AILogo size={20} animated />
-              <span className="text-[11px] font-black tracking-[0.18em] text-white/50 font-orbitron">
-                NJIRLAH
-              </span>
+              <NJIRLAHLogo size={20} showText />
             </motion.div>
           )}
         </AnimatePresence>
