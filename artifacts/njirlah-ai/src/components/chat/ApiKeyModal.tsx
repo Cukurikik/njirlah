@@ -104,7 +104,7 @@ export function ApiKeyModal({ open, onClose }: ApiKeyModalProps) {
               >
                 <Lock size={12} className="text-white/25 mt-0.5 flex-shrink-0" />
                 <p className="text-[11px] text-white/35 leading-relaxed">
-                  Your key is <span className="text-white/55 font-medium">never sent to our server</span>. Encrypted with AES-GCM in your browser using a PBKDF2-derived key from your device fingerprint.
+                  Your key is <span className="text-white/55 font-medium">encrypted locally</span> with AES-GCM using a PBKDF2-derived key from your device fingerprint. It is sent to our server only to proxy your request to OpenRouter — never stored or logged.
                 </p>
               </motion.div>
 
