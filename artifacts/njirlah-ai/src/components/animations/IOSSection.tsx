@@ -28,7 +28,7 @@ function IOSSliderDemo() {
     if (!("buttons" in e && e.buttons)) return;
     const rect = ref.current?.getBoundingClientRect();
     if (!rect) return;
-    const x = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const x = "touches" in e ? (e as unknown as React.TouchEvent).touches[0].clientX : (e as React.MouseEvent).clientX;
     setValue(Math.min(100, Math.max(0, ((x - rect.left) / rect.width) * 100)));
   };
   return (

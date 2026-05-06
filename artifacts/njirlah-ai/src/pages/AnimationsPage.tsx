@@ -39,7 +39,7 @@ export default function AnimationsPage() {
             <motion.button
               whileHover={{ opacity: 0.7 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => window.history.pushState({}, "", "/") || window.location.reload()}
+              onClick={() => { window.history.pushState({}, "", "/"); window.location.reload(); }}
               className="text-sm flex items-center gap-2 cursor-pointer"
               style={{ color: "rgba(255,255,255,0.45)" }}
             >
