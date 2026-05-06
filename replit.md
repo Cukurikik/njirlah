@@ -1,81 +1,85 @@
 # NJIRLAH AI
 
-An AI chat application with multi-model support (NJIRLAH Built-in via Replit, Cloudflare Workers AI, OpenRouter BYOK), client-side AES-GCM key encryption, and a 50+ animation showcase.
+A premium multi-model AI chat platform with BYOK OpenRouter support and built-in Cloudflare Workers AI. Features a full Agent Code Generator that streams multi-file projects in real time.
 
 ## Run & Operate
 
-```bash
-# Frontend (auto-started by artifact workflow)
-pnpm --filter @workspace/njirlah-ai run dev       # PORT=22978 BASE_PATH=/ auto-set
+| Command | Purpose |
+|---|---|
+| `pnpm install` | Install all workspace deps |
+| `pnpm --filter @workspace/njirlah-ai run dev` | Start frontend (reads `PORT` + `BASE_PATH` env vars) |
+| `pnpm --filter @workspace/api-server run dev` | Build + start API server on `:8080` |
+| `pnpm --filter @workspace/njirlah-ai run build` | Production build to `dist/public/` |
 
-# API Server (auto-started by artifact workflow at PORT=8080)
-pnpm --filter @workspace/api-server run dev
-```
-
-Required secrets (all already set): `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, `AI_INTEGRATIONS_OPENAI_BASE_URL`, `AI_INTEGRATIONS_OPENAI_API_KEY`
+**Required env vars:**
+- `PORT` / `BASE_PATH` — injected by Replit for the web artifact
+- `AI_INTEGRATIONS_OPENAI_BASE_URL` + `AI_INTEGRATIONS_OPENAI_API_KEY` — Replit built-in AI (optional, falls back to Cloudflare)
+- `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` — server-side Cloudflare Workers AI (optional)
+- `VITE_UNICORN_STUDIO_PROJECT_ID` — optional Unicorn.Studio background project ID
 
 ## Stack
 
-- React 18 + Vite 7, TypeScript strict
-- Framer Motion (all animations)
-- Tailwind CSS v4
-- Zustand (chat-store, api-key-store, model-store, compare-store)
-- TanStack Query (model list fetching)
-- Express 5 + pino (API server, port 8080)
-- Web Crypto API / AES-GCM + PBKDF2 (client-side key encryption)
+- **Frontend**: React 19 + Vite 7 + TypeScript · Tailwind CSS v4 · shadcn/ui (Radix) · Framer Motion · Zustand · TanStack Query
+- **Backend**: Express + TypeScript + esbuild · pino logging · express-rate-limit
+- **Crypto**: Web Crypto API (AES-GCM + PBKDF2) for encrypted key storage
+- **Other**: JSZip (ZIP download) · canvas-confetti · react-syntax-highlighter · date-fns
 
 ## Where things live
 
-- `artifacts/njirlah-ai/src/` — frontend source
-  - `lib/encryption.ts` — AES-GCM + PBKDF2 + browser fingerprint key derivation
-  - `lib/openrouter.ts` — fetchOpenRouterModels, validateOpenRouterKey, isModelFree
-  - `lib/cloudflare.ts` — fetchCloudflareModels (calls `/api/cloudflare/models`)
-  - `store/api-key-store.ts` — encrypt/decrypt/testConnection for OpenRouter key
-  - `store/model-store.ts` — centralized model fetching for all providers
-  - `store/chat-store.ts` — full chat state (messages, streaming, custom instructions)
-  - `hooks/useChat.ts` — streaming SSE consumer (replit / cloudflare / openrouter)
-  - `types/model-types.ts` — ModelInfo, OpenRouterRawModel, CloudflareRawModel
-  - `types/chat-types.ts` — Chat, Message, ApiMessage, TokenUsage
-  - `utils/derive-encryption-key.ts` — extracted CryptoKey derivation utility
-  - `pages/AnimationsPage.tsx` — 50+ animation showcase at `/animations`
-- `artifacts/api-server/src/routes/` — Express proxy routes
-  - `chat.ts` — `/api/replit/chat`, `/api/openrouter/chat`, `/api/cloudflare/chat` (all with SSE streaming)
-  - `cloudflare.ts` — `GET /api/cloudflare/models` (live fetch + 12-model fallback)
-  - `status.ts` — `GET /api/status` (pings all 3 providers)
-  - `health.ts` — `GET /api/healthz`
+```
+artifacts/
+  njirlah-ai/src/
+    App.tsx                    # Routing + top-level layout
+    pages/                     # ChatPage (AppInner), AnimationsPage, AgentPage, AppPreviewPage
+    components/
+      chat/                    # ChatArea, ChatBubble, ChatInput, ModelSelector, CodeBlock…
+      agent/                   # AgentCodePanel, FileTree, CodeEditor
+      layout/                  # Header, Sidebar, Footer, Background, NJIRLAHLogo, CommandPalette, CursorTrail
+      animations/              # 8 animation showcase sections (50+ demos)
+      compare/                 # CompareView, CompareModelPicker
+      preview/                 # LivePreviewPanel, BrowserFrame, DeviceSimulator
+    store/                     # Zustand stores: chat, api-key, agent, model, compare, appearance
+    hooks/                     # useChat.ts, useCompareChat.ts
+    lib/                       # openrouter.ts, cloudflare.ts, encryption.ts, build-preview-html.ts
+  api-server/src/
+    routes/                    # chat.ts (replit/openrouter/cloudflare), agent.ts (SSE), cloudflare.ts (models)
+    app.ts                     # Express setup, rate limiting
+```
+
+Schema / API contracts: see `artifacts/api-server/src/routes/`
 
 ## Architecture decisions
 
-- API server runs separately at port 8080; Vite proxies `/api/*` → `localhost:8080` so API keys never reach the client
-- OpenRouter keys are BYOK — encrypted with AES-GCM using a PBKDF2 key derived from browser fingerprint, stored in localStorage; never sent to server logs
-- Cloudflare Workers AI uses server-side `CLOUDFLARE_API_TOKEN` — never exposed to browser
-- All three providers support Server-Sent Events streaming with transparent chunk forwarding
-- Model list for OpenRouter is always fetched live after key entry (never hardcoded); Cloudflare models fetched from server route with 12-model fallback
+- **Client-side encryption**: OpenRouter keys are encrypted with AES-GCM + PBKDF2 before persisting to localStorage — the server never receives the raw key, only forwards it
+- **Vite proxy**: All `/api` calls proxy to `localhost:8080` (the api-server) to avoid CORS and keep the key forwarding seamless
+- **SPA routing**: `AppRouter` in `App.tsx` reads `window.location.pathname` directly (no react-router) — fine for a 4-page app
+- **SSE agent streaming**: The agent generates multi-file projects via Server-Sent Events; the frontend parses `file_start / file_chunk / file_end / done / error` events
+- **Unicorn.Studio**: Background supports an optional Unicorn.Studio project via `VITE_UNICORN_STUDIO_PROJECT_ID`; falls back to a canvas-based neon orb animation
 
 ## Product
 
-- Free chat via NJIRLAH Built-in (GPT-5.4 via Replit AI integration — no key needed)
-- Cloudflare Workers AI: 12+ open-source models, always free, no key needed
-- OpenRouter BYOK: 200+ models (Claude, Mistral, Llama, Gemini, etc.) after adding key
-- Side-by-side compare mode, live code preview panel, command palette (⌘K)
-- 50+ Framer Motion animation demos across 8 categories
-- AES-GCM encrypted API key storage, voice input, file attachment, export chat
-- Agent Code Generator with canvas-confetti celebration on completion + JSZip download
-- NJIRLAHLogo: neon unicorn SVG with glitch text hover, 3-click easter egg dancing unicorn overlay
+- **Chat page** (`/`): Multi-model streaming chat — switch between NJIRLAH Built-in (GPT-5.4), Cloudflare Workers AI (12+ OSS models), and OpenRouter (200+ models incl. Claude, Gemini, Grok). Features: compare mode, voice input, file attachments, per-message feedback, token speed badge, edit & regenerate, custom system instructions, chat export
+- **Agent Code Generator** (`/agent`): Describe an app, get a streaming multi-file project with live preview; confetti on completion, ZIP download
+- **Animation Showcase** (`/animations`): 50+ live interactive demos — Basic, Loaders, Text & Path, Interactive, Scroll, Cursor, iOS, Advanced
+- **Live Preview** (`/preview`): iframe renderer for agent-generated HTML/JSX/CSS files
 
 ## User preferences
 
-- Animations must feel premium, smooth, 60fps
-- Framer Motion is primary library; dark neon aesthetic (#05050A, #9E9EFF purple, #8DF0CC mint)
+- Creator credit: "Dibuat dengan ❤️ oleh Andikaa Saputraa" — always in the footer
+- Tagline: "membangun masa depan AI yang bebas, tanpa batas, ala kadarnya tapi njir lah keren"
+- Color scheme: purple #A855F7, cyan #06B6D4, pink #EC4899 on `#05050A` background
+- Logo: NJIRLAH unicorn SVG with glitch text + 3-click easter egg (dancing unicorn)
+- All primary copy/labels in a mix of Indonesian and English
 
 ## Gotchas
 
-- PORT and BASE_PATH required by vite.config.ts — set automatically by artifact workflow
-- API server must be running on port 8080 for `/api/*` calls to resolve (not just the frontend)
-- `SpeechRecognitionResultList` iteration requires explicit casting in strict TypeScript
-- Duplicate `style` props on motion elements cause Vite warnings — always merge into one style object
+- `PORT` and `BASE_PATH` env vars are required by `vite.config.ts` — it throws if missing
+- API server runs on **:8080** (hard-coded in `artifacts/api-server/src/index.ts`) — Vite proxies `/api` there
+- Cloudflare fallback in `/api/replit/chat`: if `AI_INTEGRATIONS_OPENAI_BASE_URL` is missing, the built-in route falls back to Cloudflare
+- Run `pnpm install` from workspace root before starting workflows — individual package node_modules may be missing
 
 ## Pointers
 
-- `.local/skills/react-vite/SKILL.md` — frontend build conventions
-- `.local/skills/environment-secrets/SKILL.md` — secrets management
+- `.local/skills/react-vite/` — React + Vite monorepo patterns
+- `.local/skills/pnpm-workspace/` — monorepo conventions
+- `.local/skills/ai-integrations-openai/` — Replit OpenAI integration proxy

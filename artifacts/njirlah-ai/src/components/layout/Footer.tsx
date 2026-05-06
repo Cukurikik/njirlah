@@ -1,30 +1,58 @@
-import { motion } from "framer-motion";
+import { useEffect, useRef } from "react";
+import { motion, useMotionValue, useAnimationFrame } from "framer-motion";
 
-function AnimatedHeart() {
+function UnicornPath() {
+  const progress = useMotionValue(0);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  useAnimationFrame((t) => {
+    const p = (t / 6000) % 1;
+    progress.set(p);
+    const angle = p * Math.PI * 2;
+    x.set(Math.cos(angle) * 28);
+    y.set(Math.sin(angle * 2) * 6);
+  });
+
   return (
     <motion.span
-      animate={{ scale: [1, 1.25, 1] }}
-      transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
-      className="inline-block text-rose-400"
+      style={{ x, y, display: "inline-block" }}
+      className="text-xs select-none"
+      title="unicorn along path"
     >
-      ♥
+      🦄
     </motion.span>
   );
 }
 
 export function Footer() {
   return (
-    <footer className="flex-shrink-0 border-t border-white/[0.06] py-3 px-6 flex items-center justify-between gap-4 flex-wrap">
+    <footer className="mt-auto flex-shrink-0 border-t border-white/[0.06] bg-black/40 backdrop-blur-md py-3 px-6 flex items-center justify-between gap-4 flex-wrap">
       <p className="text-[11px] text-white/20 font-mono whitespace-nowrap">
-        NJIRLAH AI &copy; {new Date().getFullYear()}
+        NJIRLAH AI © {new Date().getFullYear()}
       </p>
-      <p className="text-[11px] flex items-center gap-1.5 font-bold text-pink-400/80 flex-1 justify-center whitespace-nowrap">
-        Dibuat dengan <AnimatedHeart /> oleh{" "}
-        <span className="underline decoration-violet-400/50 text-pink-300">Andikaa Saputraa</span>
+
+      <p className="text-sm font-bold text-pink-400 flex items-center justify-center gap-1.5 flex-1 whitespace-nowrap">
+        Dibuat dengan{" "}
+        <motion.span
+          animate={{ scale: [1, 1.35, 1] }}
+          transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
+          className="inline-block text-red-500"
+        >
+          ❤️
+        </motion.span>{" "}
+        oleh{" "}
+        <span className="underline decoration-violet-400/60 text-pink-300">
+          Andikaa Saputraa
+        </span>
       </p>
-      <p className="text-[11px] text-white/15 font-mono hidden md:block whitespace-nowrap">
-        membangun masa depan AI yang bebas ✨
-      </p>
+
+      <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+        <p className="text-[10px] text-gray-500 font-mono">
+          membangun masa depan AI yang bebas, tanpa batas, ala kadarnya tapi njir lah keren.
+        </p>
+        <UnicornPath />
+      </div>
     </footer>
   );
 }

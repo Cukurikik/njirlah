@@ -1,0 +1,267 @@
+
+
+---
+
+```text
+KAMU ADALAH AI FULL‑STACK ENGINEER, UI/UX DESIGNER, DAN AI INTEGRATION ARCHITECT. TUGASMU MEMBANGUN SELURUH APLIKASI **NJIRLAH AI** DARI NOL, 100% PRODUCTION‑READY, MELIPUTI BACKEND AI, FRONTEND DENGAN ANIMASI PREMIUM, DAN LOGO. KAMU HARUS MENGIKUTI SEMUA SPESIFIKASI DI BAWAH INI DENGAN TEGAS. TIDAK BOLEH MENYIMPANG, MENGURANGI, ATAU MENAMBAH DI LUAR INSTRUKSI. GAGAL BUKAN PILIHAN.
+
+---
+
+## 1. DESKRIPSI APLIKASI
+NJIRLAH AI adalah platform chat multi‑model AI dengan dua sumber model:
+- **OpenRouter** → WAJIB BYOK (pengguna memberikan API key miliknya, bisa yang gratis). Tanpa key, tidak bisa akses model OpenRouter.
+- **Cloudflare Workers AI** → Token API disediakan server (bukan BYOK), selalu bisa digunakan tanpa key tambahan.
+
+Terdapat dua halaman utama:
+1. **Chat** (default, `/`) – chat dengan model AI, pilih model, lihat riwayat.
+2. **Agent Code Generator** (`/agent`) – agen AI membangun proyek web lengkap, kode dihasilkan baris demi baris secara streaming, ditampilkan di IDE dengan syntax highlighting, dan pratinjau langsung di panel kanan.
+
+---
+
+## 2. TECH STACK (WAJIB, TIDAK BOLEH DIGANTI)
+- **Next.js 15** (App Router) + TypeScript strict mode
+- **Tailwind CSS 4** + custom theme (warna neon purple/cyan/pink, glassmorphism)
+- **shadcn/ui** (semua komponen dasar wajib dari sini)
+- **Framer Motion** (animasi React, gesture, AnimatePresence, drag, layout)
+- **GSAP** (animasi kompleks, scroll trigger, morph, 3D)
+- **react-spring** (animasi berbasis fisika, parallax, follow pointer)
+- **react-transition-group** (transisi mounting/unmounting CSS)
+- **anime.js** (path drawing, morph, efek khusus)
+- **Zustand** (state management)
+- **Web Crypto API** (enkripsi kunci OpenRouter di sisi klien)
+- **react-syntax-highlighter** (syntax highlighting di editor Agent, tema `oneDark` atau `atomDark`)
+- **JSZip** (untuk download proyek agent)
+- **canvas-confetti** (confetti setelah agent selesai)
+- **Unicorn.Studio** (embed WebGL scene sebagai background)
+- **Vercel** deployment
+
+---
+
+## 3. ARSITEKTUR BACKEND (PROXY)
+### 3.1 Proxy OpenRouter Chat (BYOK)
+- File: `app/api/openrouter/chat/route.ts`
+- Method: `POST`
+- Menerima header `x-api-key` dari client.
+- Meneruskan request ke `https://openrouter.ai/api/v1/chat/completions` dengan header `Authorization: Bearer [KEY]`.
+- Dukung streaming (SSE); gunakan `ReadableStream` untuk meneruskan chunk demi chunk.
+- **JANGAN PERNAH MENYIMPAN KEY DI SERVER**.
+
+### 3.2 Proxy Cloudflare Workers AI Chat (Built‑in Token)
+- File: `app/api/cloudflare/chat/route.ts`
+- Method: `POST`
+- Gunakan env `CLOUDFLARE_API_TOKEN` dan `CLOUDFLARE_ACCOUNT_ID`.
+- Panggil `POST https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/run/{model}` dengan format body Cloudflare AI.
+- Dukung streaming (SSE).
+
+### 3.3 Agent Generate (Kode Proyek)
+- File: `app/api/agent/generate/route.ts`
+- Method: `POST`
+- Body: `{ prompt, modelSource, modelId }`
+- Header `x-api-key` untuk OpenRouter.
+- Bangun system prompt yang memaksa LLM menghasilkan kode proyek web dengan format:
+  ```
+  ###FILE: nama_file.ext
+  ```bahasa
+  ... kode ...
+  ```
+- Kirim ke API LLM (OpenRouter/Cloudflare) dengan `stream: true`.
+- Parsing stream real‑time untuk mendeteksi delimiter `###FILE:`.
+- Kirim SSE events: `file_start`, `file_chunk`, `file_end`, `agent_log`, `done`, `error`.
+- **Tidak boleh menyimpan key**; proxy saja.
+
+### 3.4 Fetch Model Cloudflare (Server‑side)
+- File: `app/api/cloudflare/models/route.ts`
+- Method: `GET`
+- Panggil `GET https://api.cloudflare.com/client/v4/.../ai/models?task=text-generation` dengan token server.
+- Kembalikan daftar model.
+
+---
+
+## 4. ENKRIPSI KUNCI OPENROUTER
+- File: `lib/encryption.ts`
+- Gunakan Web Crypto API (AES‑GCM).
+- Kunci enkripsi diturunkan dari **userAgent + screen width/height** (SHA‑256) + opsional **passphrase** (jika user set PIN).
+- Fungsi: `encryptApiKey(plain)`, `decryptApiKey(cipher)`.
+- Simpan ciphertext di localStorage; memory plaintext hanya di Zustand.
+
+---
+
+## 5. MODEL & PROVIDER (DINAMIS)
+### 5.1 OpenRouter (BYOK)
+- Fetch `GET https://openrouter.ai/api/v1/models` dengan key pengguna.
+- Tampilkan semua model. Filter provider untuk **55 provider**:
+```
+AI21, AionLabs, AkashML, Alibaba Cloud Int., Amazon Bedrock, Anthropic, Arcee AI, AtlasCloud, Azure, Baidu Qianfan, Baseten, Cerebras, Chutes, Clarifai, Cohere, DeepInfra, DeepSeek, Featherless, Fireworks, Friendli, GMICloud, Google AI Studio, Google Vertex, Groq, Inception, Inceptron, Infermatic, Inflection, io.net, Liquid, Mancer, MiniMax, Mistral, Moonshot AI, Morph, Nebius Token Factory, NextBit, NovitaAI, OpenAI, OpenInference, Parasail, Perplexity, Phala, Reka AI, Relace, SambaNova, SiliconFlow, StepFun, Switchpoint, Together, Venice, Weights & Biases, xAI, Xiaomi, Z.ai
+```
+- Beri badge **GRATIS** untuk model dengan biaya $0 (daftar gratis referensi):
+```
+google/gemma-2-9b-it:free, google/learnlm-1.5-pro-experimental:free, meta-llama/llama-3.1-8b-instruct:free, meta-llama/llama-3.1-70b-instruct:free, meta-llama/llama-3.2-1b-instruct:free, meta-llama/llama-3.2-3b-instruct:free, mistralai/pixtral-12b:free, mistralai/mistral-7b-instruct:free, qwen/qwen-2-7b-instruct:free, qwen/qwen-2.5-7b-instruct:free, qwen/qwen-2.5-coder-32b-instruct:free, nvidia/llama-3.1-nemotron-70b-instruct:free, microsoft/phi-3-medium-128k-instruct:free, microsoft/phi-3-mini-128k-instruct:free, gryphe/mythomax-l2-13b:free, openrouter/auto:free
+```
+
+### 5.2 Cloudflare (Built‑in)
+- Fetch via endpoint internal `/api/cloudflare/models`.
+- Tampilkan dengan ikon "CF". Fallback hardcode 10 model jika gagal.
+
+---
+
+## 6. UI/UX GLOBAL
+### 6.1 Tema
+- Background: `bg-[#05050A]`
+- Glassmorphism: `backdrop-blur-2xl bg-white/5 border border-white/10`
+- Warna neon: purple `#A855F7`, cyan `#06B6D4`, pink `#EC4899`
+- Font: **Inter** body, **Space Grotesk** headings.
+
+### 6.2 Layout Utama
+- **Unicorn.Studio WebGL** scene sebagai background fixed, z‑index 0, overlay `bg-black/70 backdrop-blur-sm` agar konten terbaca.
+- **Sidebar kiri** (glass): riwayat chat, navigasi ke `/agent`, input OpenRouter API key, tombol New Chat.
+- **Footer** di semua halaman:
+```tsx
+<footer className="mt-auto border-t border-white/10 bg-black/40 backdrop-blur-md py-6 text-center">
+  <p className="text-lg font-bold text-neon-pink flex items-center justify-center gap-2">
+    Dibuat dengan <span className="animate-pulse text-red-500">❤️</span> oleh <span className="underline decoration-neon-purple">Andikaa Saputraa</span>
+  </p>
+  <p className="text-sm text-gray-400 mt-1">
+    Membangun masa depan AI yang bebas, tanpa batas, ala kadarnya tapi njir lah keren.
+  </p>
+  <p className="text-xs text-gray-500 mt-2">© {new Date().getFullYear()} NJIRLAH AI</p>
+</footer>
+```
+- **Logo**: Buat komponen `NJIRLAHLogo.tsx` yang menampilkan unicorn neon glitch dengan teks "NJIRLAH" menggunakan SVG atau efek CSS. Warna neon, bisa beranimasi (path drawing atau glitch effect). Klik 3x memicu easter egg unicorn menari.
+
+### 6.3 Full Animation Requirements (Wajib Diimplementasikan)
+Semua animasi berikut harus ada di berbagai komponen, menggunakan kombinasi library:
+
+1. Spring physics (semua transisi)
+2. Drag (sidebar)
+3. Enter/exit AnimatePresence (setiap komponen)
+4. Gesture (tap/double‑tap)
+5. Stagger text (kemunculan pesan)
+6. Keyframes loop (floating unicorn, glow pulse)
+7. Rotate 360° (refresh)
+8. Spinning 3D cube (loading screen)
+9. Loading: circle spinner, jumping dots, ripple, pulse dots
+10. Follow pointer with spring (glow mengikuti mouse di background)
+11. Layout animation (sidebar, viewport device)
+12. Material Design ripple (tombol, list)
+13. Motion along a path (unicorn di footer)
+14. Parallax (background dengan scroll)
+15. Path drawing (logo SVG)
+16. Split text (heading "NJIRLAH AI")
+17. Tilt card (kartu model)
+18. Accordion (riwayat chat)
+19. Fill text (tombol Send)
+20. Loading progress bar (streaming)
+21. Scroll Direction: Hide Header
+22. Cursor: floating target, trail, trail velocity
+23. Hold to confirm (tombol hapus)
+24. Image reveal (transisi panel)
+25. Infinite loading (model dropdown)
+26. iOS slider (temperature)
+27. Magnetic filings (chip provider)
+28. Multi‑state badge (status Online/Offline/Typing)
+29. iOS Notifications stack (toast)
+30. Path morphing (send → checkmark)
+31. Smooth tabs, tab select
+32. Variants (container‑child stagger)
+33. Loading overlay
+34. Scroll velocity: 3D planes
+35. Scroll Image Reveal
+36. Scroll Zoom Hero
+37. iOS App Store Card stack (riwayat chat swipeable)
+38. Swipe actions (hapus riwayat)
+39. Apple Intelligence ripple (avatar AI berpikir)
+40. Carousel: iOS exposure slider (pemilih model)
+41. iOS App Folder (grup provider)
+42. Command Palette (`Ctrl+K`)
+
+---
+
+## 7. HALAMAN UTAMA CHAT (`/`)
+### Komponen
+- **Sidebar**: Nav ke `/agent`, input API key, riwayat chat, tombol New Chat.
+- **Main Panel**:
+  - Header: model terpilih, badge provider, status streaming.
+  - Chat area: daftar pesan (ChatBubble), typing indicator (tiga titik neon).
+  - Input box: textarea, tombol send (dengan path morphing), tombol lampirkan file (opsional).
+- **ModelSelector**: combo box shadcn dengan search, filter provider, grup "Cloudflare"/"OpenRouter", badge GRATIS/harga, ikon provider, list diperbarui dinamis.
+
+---
+
+## 8. HALAMAN AGENT CODE GENERATOR (`/agent`)
+### 8.1 Panel Kiri (Agent IDE)
+- Header: "Agent Code Generator", status indicator, pilihan model.
+- **FileTree**: daftar file yang dihasilkan, dengan status (pending/streaming/done), bisa diklik.
+- **CodeEditor**: menggunakan react-syntax-highlighter, menampilkan kode file yang dipilih, streaming real‑time (teks bertambah baris per baris, animasi highlight baris baru).
+- Input prompt di bawah dengan tombol Generate (pulse) dan Stop.
+
+### 8.2 Panel Kanan (Live Preview)
+- **BrowserFrame**: simulated browser dengan URL bar, tombol titik, tombol refresh.
+- **DeviceControls**: Desktop/Tablet/Mobile (lebar viewport animasi layout).
+- **iframe** dengan `srcdoc` yang diperbarui setiap kali file selesai. Jika proyek React/JSX, sertakan Babel standalone, React/ReactDOM CDN, dan transpilasi kode JSX. Gabungkan CSS di `<style>`.
+- Download ZIP dan Deploy (tombol) – opsional tapi bagus.
+
+---
+
+## 9. STATE MANAGEMENT (ZUSTAND)
+Buat store:
+- `useApiKeyStore`: `openrouterKey` (plaintext dari enkripsi), `setKey`, `clearKey`, `testConnection`.
+- `useModelStore`: `openrouterModels`, `cloudflareModels`, `fetchModels`.
+- `useChatStore`: chats, activeChat, addMessage, streaming.
+- `useAgentStore`: files, activeFile, isGenerating, logs, actions untuk file events.
+
+---
+
+## 10. DELIVERABLES (SEMUA FILE HARUS DIHASILKAN)
+```
+njirlah-ai/
+├── app/
+│   ├── layout.tsx                 # Layout utama: Unicorn.Studio, sidebar, footer
+│   ├── page.tsx                   # Halaman chat
+│   ├── agent/
+│   │   └── page.tsx               # Halaman Agent
+│   ├── api/
+│   │   ├── openrouter/chat/route.ts
+│   │   ├── cloudflare/chat/route.ts
+│   │   ├── cloudflare/models/route.ts
+│   │   └── agent/generate/route.ts
+├── components/
+│   ├── layout/
+│   │   ├── Sidebar.tsx
+│   │   ├── Footer.tsx
+│   │   └── Logo.tsx               # NJIRLAHLogo
+│   ├── chat/
+│   │   ├── ChatPanel.tsx
+│   │   ├── ChatBubble.tsx
+│   │   ├── ModelSelector.tsx
+│   │   └── TypingIndicator.tsx
+│   ├── agent/
+│   │   ├── AgentCodePanel.tsx
+│   │   ├── FileTree.tsx
+│   │   ├── CodeEditor.tsx
+│   ├── preview/
+│   │   ├── LivePreviewPanel.tsx
+│   │   ├── BrowserFrame.tsx
+│   │   └── DeviceControls.tsx
+│   └── animations/                # Semua komponen animasi kustom (CursorTrail, HoldToConfirm, dll.)
+├── lib/
+│   ├── encryption.ts
+│   ├── agent-parser.ts
+│   ├── build-preview-html.ts
+│   ├── openrouter.ts
+│   └── cloudflare.ts
+├── store/
+│   ├── api-key-store.ts
+│   ├── model-store.ts
+│   ├── chat-store.ts
+│   └── agent-store.ts
+├── types/
+│   ├── model-types.ts
+│   ├── chat-types.ts
+│   └── agent-types.ts
+└── ... (config files)
+```
+
+---
+
+## 11. PERINTAH AKHIR
+**BANGUN SELURUH KODE SECARA LENGKAP, SIAP COPY‑PASTE KE PROYEK NEXT.JS.** Setiap file harus memiliki kode nyata, tanpa placeholder. Animasi wajib ada dan berfungsi. Logo harus terintegrasi. Aplikasi harus bisa langsung `npm run dev` setelah mengisi environment variable `CLOUDFLARE_API_TOKEN` dan `CLOUDFLARE_ACCOUNT_ID`.
