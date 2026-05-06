@@ -1,6 +1,5 @@
-import { useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, Code2, Menu } from "lucide-react";
+import { Activity, Code2, Menu, Settings } from "lucide-react";
 import { ModelSelector } from "@/components/chat/ModelSelector";
 import { useChatStore } from "@/store/chat-store";
 import { AILogo } from "@/components/ui/AILogo";
@@ -11,9 +10,10 @@ interface HeaderProps {
   onToggleDevPanel?: () => void;
   devPanelOpen?: boolean;
   onOpenMobileSidebar?: () => void;
+  onOpenSettings?: () => void;
 }
 
-export function Header({ onToggleDevPanel, devPanelOpen, onOpenMobileSidebar }: HeaderProps) {
+export function Header({ onToggleDevPanel, devPanelOpen, onOpenMobileSidebar, onOpenSettings }: HeaderProps) {
   const { selectedProvider, isStreaming } = useChatStore();
 
   return (
@@ -101,6 +101,17 @@ export function Header({ onToggleDevPanel, devPanelOpen, onOpenMobileSidebar }: 
              selectedProvider === "replit" ? "NJIRLAH AI" : "OpenRouter"}
           </motion.div>
         </AnimatePresence>
+
+        {/* Settings */}
+        <motion.button
+          onClick={onOpenSettings}
+          whileHover={{ backgroundColor: "rgba(255,255,255,0.04)" }}
+          whileTap={{ scale: 0.93 }}
+          className="p-1.5 rounded border border-white/[0.06] text-white/25 hover:text-white/55 transition-colors"
+          title="Settings"
+        >
+          <Settings size={13} />
+        </motion.button>
 
         {/* Streaming badge */}
         <AnimatePresence>

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Code2, Terminal, FolderTree, Play, RefreshCw, X, ChevronRight,
   ChevronDown, File, Folder, FolderOpen, Copy, Check, Maximize2,
-  Minimize2, FileCode, FileJson, FileText, Columns2, Eye,
+  Minimize2, FileCode, FileJson, FileText, Columns2, Eye, Download,
 } from "lucide-react";
 
 /* ─── Types ─────────────────────────────────────────── */
@@ -246,6 +246,16 @@ function CodeEditor({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDownload = () => {
+    const ext = language ?? "txt";
+    const filename = `code.${ext}`;
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleTab = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key !== "Tab") return;
     e.preventDefault();
@@ -279,6 +289,13 @@ function CodeEditor({
                 </motion.span>
               )}
             </AnimatePresence>
+          </motion.button>
+          <motion.button
+            onClick={handleDownload} whileTap={{ scale: 0.93 }}
+            title="Download file"
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono text-white/25 hover:text-white/55 hover:bg-white/[0.04] transition-all border border-transparent hover:border-white/[0.06]"
+          >
+            <Download size={9} /> Save
           </motion.button>
         </div>
       )}

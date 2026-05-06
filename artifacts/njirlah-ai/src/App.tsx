@@ -12,6 +12,7 @@ import { ChatInput } from "@/components/chat/ChatInput";
 import { ApiKeyModal } from "@/components/chat/ApiKeyModal";
 import { ExportModal } from "@/components/chat/ExportModal";
 import { CustomInstructionsModal } from "@/components/chat/CustomInstructionsModal";
+import { SettingsModal } from "@/components/chat/SettingsModal";
 import { DevPanel } from "@/components/dev/DevPanel";
 
 const queryClient = new QueryClient({
@@ -28,6 +29,7 @@ function AppInner() {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [devPanelOpen, setDevPanelOpen] = useState(false);
   const [customInstructionsOpen, setCustomInstructionsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { loadKey } = useApiKeyStore();
   const { chats, createChat } = useChatStore();
@@ -59,6 +61,7 @@ function AppInner() {
             onToggleDevPanel={() => setDevPanelOpen(!devPanelOpen)}
             devPanelOpen={devPanelOpen}
             onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+            onOpenSettings={() => setSettingsOpen(true)}
           />
           <div className="flex flex-1 min-h-0 overflow-hidden">
             <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
@@ -74,6 +77,7 @@ function AppInner() {
       <ApiKeyModal open={apiKeyModalOpen} onClose={() => setApiKeyModalOpen(false)} />
       <ExportModal open={exportModalOpen} onClose={() => setExportModalOpen(false)} />
       <CustomInstructionsModal open={customInstructionsOpen} onClose={() => setCustomInstructionsOpen(false)} />
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </motion.div>
   );
 }

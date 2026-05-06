@@ -43,6 +43,8 @@ interface ChatStore {
   setStreaming: (streaming: boolean) => void;
   getActiveChat: () => Chat | null;
   setCustomInstructions: (instructions: string) => void;
+  truncateChat: (chatId: string, messageId: string) => void;
+  clearAllChats: () => void;
 }
 
 export const useChatStore = create<ChatStore>()(
@@ -138,6 +140,18 @@ export const useChatStore = create<ChatStore>()(
       },
 
       setCustomInstructions: (instructions) => set({ customInstructions: instructions }),
+
+      truncateChat: (chatId, messageId) =>
+        set((state) => ({
+          chats: state.chats.map((c) => {
+            if (c.id !== chatId) return c;
+            const idx = c.messages.findIndex((m) => m.id === messageId);
+            if (idx === -1) return c;
+            return { ...c, messages: c.messages.slice(0, idx) };
+          }),
+        })),
+
+      clearAllChats: () => set({ chats: [], activeChatId: null }),
     }),
     {
       name: "njirlah-chat-store",

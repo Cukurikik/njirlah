@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, RefreshCw, ThumbsUp, ThumbsDown, Check } from "lucide-react";
-import { useState } from "react";
+import { Copy, RefreshCw, ThumbsUp, ThumbsDown, Check, Pencil, X, CornerDownRight } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { useChatStore, type Message } from "@/store/chat-store";
 import { useChat } from "@/hooks/useChat";
 import { MarkdownContent } from "./MarkdownContent";
@@ -40,9 +40,20 @@ export function TypingIndicator() {
 
 export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) {
   const [copied, setCopied] = useState(false);
-  const { updateMessage } = useChatStore();
-  const { regenerate } = useChat();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(message.content);
+  const editRef = useRef<HTMLTextAreaElement>(null);
+  const { updateMessage, truncateChat } = useChatStore();
+  const { sendMessage, regenerate } = useChat();
   const isUser = message.role === "user";
+
+  useEffect(() => {
+    if (isEditing && editRef.current) {
+      editRef.current.focus();
+      editRef.current.style.height = "auto";
+      editRef.current.style.height = `${editRef.current.scrollHeight}px`;
+    }
+  }, [isEditing]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -52,6 +63,29 @@ export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) 
 
   const handleLike = (liked: boolean) => {
     updateMessage(chatId, message.id, { liked: message.liked === liked ? null : liked });
+  };
+
+  const handleEditStart = () => {
+    setEditValue(message.content);
+    setIsEditing(true);
+  };
+
+  const handleEditCancel = () => {
+    setIsEditing(false);
+    setEditValue(message.content);
+  };
+
+  const handleEditConfirm = async () => {
+    const trimmed = editValue.trim();
+    if (!trimmed) return;
+    setIsEditing(false);
+    truncateChat(chatId, message.id);
+    await sendMessage(trimmed);
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleEditConfirm(); }
+    if (e.key === "Escape") handleEditCancel();
   };
 
   if (message.isStreaming && !message.content) return <TypingIndicator />;
@@ -84,36 +118,69 @@ export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) 
           {isUser ? "you" : "njirlah ai"}
         </span>
 
-        {/* Message bubble */}
-        <div
-          className={`max-w-[85%] rounded-lg text-sm leading-relaxed ${
-            isUser
-              ? "bg-violet-500/[0.09] border border-violet-500/20 text-white/90 rounded-tr-sm px-4 py-2.5"
-              : "w-full bg-white/[0.02] border border-white/[0.06] text-white/80 rounded-tl-sm px-4 py-3"
-          }`}
-        >
-          {isUser ? (
-            <>
-              <span className="whitespace-pre-wrap break-words">{message.content}</span>
-              {message.isStreaming && (
-                <span className="inline-block w-[2px] h-3.5 bg-violet-400 ml-0.5 align-middle cursor-blink rounded-full" />
-              )}
-            </>
-          ) : (
-            <MarkdownContent content={message.content} isStreaming={message.isStreaming} />
-          )}
-        </div>
+        {/* Message bubble or edit mode */}
+        {isEditing ? (
+          <div className="max-w-[85%] w-full space-y-2">
+            <textarea
+              ref={editRef}
+              value={editValue}
+              onChange={(e) => {
+                setEditValue(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = `${e.target.scrollHeight}px`;
+              }}
+              onKeyDown={handleEditKeyDown}
+              className="w-full bg-violet-500/[0.06] border border-violet-500/30 rounded-lg px-4 py-2.5 text-sm text-white/85 resize-none focus:outline-none leading-relaxed focus:border-violet-500/50 transition-colors scrollbar-thin font-sans"
+              style={{ minHeight: "72px" }}
+            />
+            <div className="flex items-center gap-1.5 justify-end">
+              <motion.button
+                onClick={handleEditCancel}
+                whileHover={{ backgroundColor: "rgba(255,255,255,0.04)" }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-1 px-2.5 py-1 rounded text-[11px] text-white/35 hover:text-white/60 font-mono border border-transparent hover:border-white/[0.07] transition-all"
+              >
+                <X size={10} /> Cancel
+              </motion.button>
+              <motion.button
+                onClick={handleEditConfirm}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-1 px-3 py-1 rounded text-[11px] font-mono font-medium bg-violet-500/80 hover:bg-violet-500/90 text-white transition-colors"
+              >
+                <CornerDownRight size={10} /> Re-send
+              </motion.button>
+            </div>
+          </div>
+        ) : (
+          <div
+            className={`max-w-[85%] rounded-lg text-sm leading-relaxed ${
+              isUser
+                ? "bg-violet-500/[0.09] border border-violet-500/20 text-white/90 rounded-tr-sm px-4 py-2.5"
+                : "w-full bg-white/[0.02] border border-white/[0.06] text-white/80 rounded-tl-sm px-4 py-3"
+            }`}
+          >
+            {isUser ? (
+              <>
+                <span className="whitespace-pre-wrap break-words">{message.content}</span>
+                {message.isStreaming && (
+                  <span className="inline-block w-[2px] h-3.5 bg-violet-400 ml-0.5 align-middle cursor-blink rounded-full" />
+                )}
+              </>
+            ) : (
+              <MarkdownContent content={message.content} isStreaming={message.isStreaming} />
+            )}
+          </div>
+        )}
 
-        {/* Action toolbar */}
+        {/* AI action toolbar */}
         {!isUser && !message.isStreaming && message.content && (
           <div className="flex items-center gap-0.5 group-hover:opacity-100 opacity-0 transition-opacity duration-150">
             {[
               {
-                icon: copied
-                  ? <Check size={11} className="text-green-400" />
-                  : <Copy size={11} />,
+                icon: copied ? <Check size={11} className="text-green-400" /> : <Copy size={11} />,
                 onClick: handleCopy,
-                title: "Copy",
+                title: "Copy response",
               },
               ...(isLast
                 ? [{ icon: <RefreshCw size={11} />, onClick: regenerate, title: "Regenerate" }]
@@ -121,14 +188,14 @@ export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) 
               {
                 icon: <ThumbsUp size={11} />,
                 onClick: () => handleLike(true),
-                title: "Good",
+                title: "Good response",
                 active: message.liked === true,
                 activeClass: "text-green-400",
               },
               {
                 icon: <ThumbsDown size={11} />,
                 onClick: () => handleLike(false),
-                title: "Bad",
+                title: "Bad response",
                 active: message.liked === false,
                 activeClass: "text-red-400",
               },
@@ -145,6 +212,20 @@ export function ChatBubble({ message, chatId, isLast, index }: ChatBubbleProps) 
               </motion.button>
             ))}
           </div>
+        )}
+
+        {/* User edit button */}
+        {isUser && !message.isStreaming && !isEditing && (
+          <motion.button
+            onClick={handleEditStart}
+            initial={{ opacity: 0 }}
+            whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.05)" }}
+            whileTap={{ scale: 0.92 }}
+            className="opacity-0 group-hover:opacity-100 p-1.5 rounded text-white/20 hover:text-white/55 transition-all"
+            title="Edit and re-send"
+          >
+            <Pencil size={11} />
+          </motion.button>
         )}
       </div>
     </motion.div>
