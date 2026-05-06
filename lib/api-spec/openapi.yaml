@@ -3,15 +3,13 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: NJIRLAH AI API specification
+  description: API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
-  - name: cloudflare
-    description: Cloudflare Workers AI operations
 paths:
   /healthz:
     get:
@@ -26,27 +24,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
-
-  /cloudflare/models:
-    get:
-      operationId: getCloudflareModels
-      tags: [cloudflare]
-      summary: Get Cloudflare Workers AI models
-      description: Returns list of available text-generation models from Cloudflare
-      responses:
-        "200":
-          description: List of Cloudflare models
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CloudflareModelsResponse"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
 components:
   schemas:
     HealthStatus:
@@ -57,40 +34,3 @@ components:
       required:
         - status
 
-    CloudflareModel:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-        task:
-          type: object
-          properties:
-            name:
-              type: string
-          required:
-            - name
-      required:
-        - id
-        - name
-
-    CloudflareModelsResponse:
-      type: object
-      properties:
-        models:
-          type: array
-          items:
-            $ref: "#/components/schemas/CloudflareModel"
-      required:
-        - models
-
-    ErrorResponse:
-      type: object
-      properties:
-        error:
-          type: string
-      required:
-        - error
