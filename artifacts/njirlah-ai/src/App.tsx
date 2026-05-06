@@ -21,6 +21,7 @@ import { CursorTrail } from "@/components/layout/CursorTrail";
 import { CommandPalette } from "@/components/layout/CommandPalette";
 import AnimationsPage from "@/pages/AnimationsPage";
 import AppPreviewPage from "@/pages/AppPreviewPage";
+import AgentPage from "@/pages/AgentPage";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 1000 * 60 * 5 } },
@@ -138,6 +139,7 @@ function AppRouter() {
   const path = window.location.pathname;
   if (path.endsWith("/animations")) return <AnimationsPage />;
   if (path.endsWith("/preview")) return <AppPreviewPage />;
+  if (path.endsWith("/agent")) return <AgentPage />;
   return <AppInner />;
 }
 

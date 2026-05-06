@@ -3,6 +3,7 @@ import healthRouter from "./health";
 import chatRouter from "./chat";
 import statusRouter from "./status";
 import cloudflareRouter from "./cloudflare";
+import agentRouter from "./agent";
 
 const router: IRouter = Router();
 
@@ -10,5 +11,6 @@ router.use(healthRouter);
 router.use(statusRouter);
 router.use(cloudflareRouter);
 router.use(chatRouter);
+router.use(agentRouter);
 
 export default router;

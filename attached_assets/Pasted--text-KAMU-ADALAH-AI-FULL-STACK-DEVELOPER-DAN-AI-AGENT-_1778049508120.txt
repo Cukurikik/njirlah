@@ -1,0 +1,167 @@
+```text
+KAMU ADALAH AI FULL‑STACK DEVELOPER DAN AI AGENT ARCHITECT. TUGASMU SEKARANG: MEMBANGUN FITUR **AGENT CODE GENERATION** PADA NJIRLAH AI SECARA LENGKAP DAN PRODUCTION‑READY. INI BUKAN SIMULASI – AGEN HARUS BENAR‑BENAR MENGHASILKAN KODE MELALUI STREAMING DAN DITAMPILKAN SECARA REAL‑TIME DI PANEL SEPERTI IDE, LALU HASILNYA DAPAT DILIHAT DI LIVE PREVIEW. KAMU HARUS MENGIKUTI SEMUA SPESIFIKASI DI BAWAH DENGAN TEGAS, TIDAK BOLEH MENYIMPANG SEDIKIT PUN.
+
+---
+
+## 1. KONSEP FITUR BARU: AGENT‑DRIVEN FULL‑STACK CODE GENERATION
+NJIRLAH AI sekarang memiliki mode **"Agent Code"** di mana pengguna dapat meminta agen AI untuk membangun proyek web secara penuh. Agen akan:
+- Menerima instruksi pengguna (misal "Buat landing page dengan hero dan navbar").
+- Menggunakan model AI (dari OpenRouter BYOK milik pengguna atau model Cloudflare bawaan) untuk menghasilkan kode file‑file proyek.
+- Mengirimkan konten setiap file secara **streaming baris per baris** melalui Server‑Sent Events (SSE).
+- Frontend menampilkan proses ini di **panel kiri bergaya IDE**: daftar file yang sedang/akan dibuat, dan editor kode yang menampilkan kode yang sedang diketik secara real‑time dengan syntax highlighting.
+- Setiap kali sebuah file selesai dibuat, **panel kanan (Live Preview)** langsung diperbarui untuk menampilkan hasil dari kode tersebut (jika memungkinkan).
+- Proyek yang dihasilkan adalah **web statis (HTML, CSS, JavaScript)** atau **React dengan JSX** yang dapat di‑transpile di browser menggunakan Babel standalone, sehingga preview berfungsi tanpa server build.
+
+---
+
+## 2. ARSITEKTUR BACKEND AGENT (WAJIB)
+### a. Endpoint Agent: `/api/agent/generate`
+- Method: `POST`
+- Menerima body JSON:
+  - `prompt`: instruksi pengguna.
+  - `modelSource`: `'openrouter'` atau `'cloudflare'`.
+  - `modelId` (jika OpenRouter).
+  - `apiKey` (untuk OpenRouter, dikirim dari client via header `x-api-key`; TIDAK disimpan server).
+- Langkah backend:
+  1. Membangun system prompt yang memerintahkan LLM untuk menghasilkan kode proyek web lengkap, mengembalikan **daftar file** dengan nama dan konten, dalam format JSON khusus yang mudah di‑parse.
+  2. Mengirim request ke LLM (OpenRouter Chat Completions API atau Cloudflare Workers AI) dengan streaming diaktifkan.
+  3. Menerima stream dari LLM, lalu mengurai outputnya secara bertahap. Agen harus bisa mendeteksi blok file (misalnya dengan delimiter `###FILE: nama_file` diikuti konten kode).
+  4. Setiap kali potongan konten file baru tersedia, kirim event SSE ke client dengan struktur:
+     - `event: file_start`, data: `{ filename: "index.html" }`
+     - `event: file_chunk`, data: `{ filename: "index.html", chunk: "potongan teks..." }`
+     - `event: file_end`, data: `{ filename: "index.html" }`
+     - `event: agent_log`, data: `{ message: "Memproses..." }`
+     - `event: done`, data: `{ message: "Semua file selesai" }`
+  5. Jika terjadi error, kirim event `error`.
+- Endpoint harus menangani kedua sumber model dengan cara yang sesuai: untuk OpenRouter, teruskan key dari header; untuk Cloudflare, gunakan token server.
+- Streaming WAJIB menggunakan `ReadableStream` dan `TextDecoder` untuk parsing chunk dari LLM.
+
+### b. Parsing Output LLM (Penting)
+- Karena LLM tidak selalu menghasilkan format terstruktur, agen harus memberikan system prompt yang sangat jelas, misalnya:
+  ```
+  Anda adalah AI pembuat kode. Berdasarkan permintaan pengguna, buatlah proyek web lengkap. Kembalikan setiap file dengan format:
+  
+  ###FILE: nama_file.ext
+  ```bahasa
+  ... kode ...
+  ```
+  
+  Jangan berikan teks lain selain blok file tersebut. Jika proyek memerlukan banyak file, ulangi format di atas.
+  ```
+- Saat streaming, backend memproses teks yang masuk. Ketika menemukan `###FILE:`, mulailah mengumpulkan baris untuk file tersebut. Setiap baris baru dikirim sebagai `file_chunk`. Saat menemukan `###FILE:` berikutnya atau stream selesai, tandai `file_end` untuk file sebelumnya.
+
+---
+
+## 3. FRONTEND: PANEL KIRI – AGENT IDE
+Ini adalah komponen utama yang menampilkan alur kerja agen seperti IDE.
+
+### a. Struktur Panel Kiri (40% lebar)
+- **Header**: "Agent Code Generator", dengan indikator status (🔄 Generating... / ✅ Done).
+- **Daftar File (File Tree)**: Di sebelah kiri editor, daftar file yang sudah dihasilkan/dalam proses.
+  - Setiap item: ikon file (📄), nama file. File yang sedang aktif diketik: background `bg-blue-500/10`, border kiri biru.
+  - Klik file: menampilkan kontennya di editor utama.
+- **Editor Kode (Code Viewer)**:
+  - Menampilkan kode dari file yang dipilih dengan **syntax highlighting** (gunakan library `react-syntax-highlighter` dengan tema gelap seperti `oneDark`).
+  - Saat file sedang di‑streaming, teks muncul **karakter per karakter** atau baris per baris dengan efek animasi (gunakan Framer Motion untuk opacity atau menggunakan teknik menambahkan teks secara bertahap dari state yang di‑update oleh SSE).
+  - Blok kode bisa diskrol.
+  - Setelah file selesai, editor menampilkan kode penuh dengan highlight.
+- **Input Prompt** (di bagian bawah panel kiri, di atas tombol aksi):
+  - Textarea dengan placeholder "Describe the app you want to build...".
+  - Tombol "Generate" (biru neon, glowing).
+  - Tombol "Stop" (jika sedang generating).
+
+### b. Perilaku Streaming Real‑Time
+- Dengarkan SSE dari `/api/agent/generate`.
+- Simpan state `files: Record<string, string>` (nama file → konten terkini).
+- Saat event `file_start`, tambahkan file ke daftar, set konten kosong.
+- Saat `file_chunk`, tambahkan chunk ke konten file tersebut. **Tampilkan perubahan secara langsung di editor**: Gunakan state yang menyebabkan re‑render dengan teks bertambah. Untuk animasi "mengetik", kita bisa menambahkan karakter per karakter dari chunk (parsing chunk menjadi array karakter dan menambah satu per satu dengan interval kecil). Tapi untuk performa, lebih baik menambahkan chunk langsung (setiap chunk adalah beberapa karakter atau satu baris) dan memberikan efek highlight sementara pada baris baru. Bisa menggunakan CSS transition.
+- Saat `file_end`, tandai file selesai (centang hijau).
+
+---
+
+## 4. FRONTEND: PANEL KANAN – LIVE PREVIEW
+### a. Pratinjau Proyek dalam Iframe
+- Panel kanan (60%) menampilkan "Preview" dari proyek yang sedang dibuat.
+- Di atasnya terdapat **Simulated Browser Frame** (seperti desain emergent.sh): URL bar dengan `localhost:3000` (atau sesuai proyek), tombol device (desktop/tablet/mobile), tombol refresh.
+- Di dalam viewport, render iframe dengan `srcdoc` yang diisi dari file‑file yang sudah dihasilkan.
+- Saat ada file baru atau update, langsung perbarui iframe dengan konten terbaru.
+
+### b. Logika Kompilasi Sederhana
+- Jika proyek adalah HTML + CSS + JS murni, cukup gabungkan file‑file tersebut menjadi satu HTML untuk iframe.
+- Jika proyek React (ada file `.jsx` atau `.tsx`), gunakan **Babel standalone** di browser untuk men‑transpile JSX ke JavaScript. Libatkan script Babel di dalam iframe.
+- Susun struktur iframe: buat HTML yang me‑load script Babel, lalu masukkan kode React yang di‑transpile, beserta React dan ReactDOM dari CDN. Contoh template:
+  ```html
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>/* CSS dari file */</style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+      // Gabungkan kode JSX dari file
+    </script>
+  </body>
+  </html>
+  ```
+- Jika file CSS terpisah, masukkan di dalam tag `<style>`.
+- Update iframe setiap kali ada `file_end` event, menggunakan `useEffect`.
+
+### c. Kontrol Device
+- Tombol Desktop/Tablet/Mobile mengubah lebar viewport iframe menggunakan Framer Motion layout, seperti yang sudah dijelaskan dalam desain sebelumnya.
+
+---
+
+## 5. INTEGRASI DENGAN SISTEM YANG ADA (BYOK & MODEL)
+- **Mode Agent** menggunakan kunci OpenRouter pengguna (dikirim via header `x-api-key` ke endpoint agent) atau token Cloudflare server (jika pengguna memilih model Cloudflare). Tidak ada kunci server untuk OpenRouter.
+- Model yang digunakan untuk agent bisa dipilih dari daftar model yang sudah tersedia di aplikasi (fetch dinamis dari OpenRouter dan Cloudflare). Gunakan `modelId` dan `modelSource`.
+- Pastikan di UI Agent, pengguna bisa memilih model (misalnya `gpt-4o`, `claude-3.5-sonnet`, dll.) sebelum memulai generate.
+
+---
+
+## 6. ANIMASI & UI/UX (WAJIB)
+- Gunakan **Framer Motion** untuk semua animasi:
+  - Daftar file: masuk stagger.
+  - Editor: saat baris baru muncul, highlight kuning sebentar lalu hilang (efek "baris baru").
+  - Tombol "Generate": pulse saat generating.
+  - Indikator generating: spinner atau titik berkedip.
+- Warna tema gelap: background `#0a0a10`, panel kiri `#0d0d18`, panel kanan `#0d0d15`.
+- Font: Inter, Space Grotesk.
+- Syntax highlighting di editor menggunakan `react-syntax-highlighter` dengan style atomDark atau oneDark.
+
+---
+
+## 7. STRUKTUR FILE YANG HARUS DIHASILKAN
+Kamu harus membuat kode untuk file‑file berikut (hanya file baru yang terkait Agent, tidak perlu mengubah yang sudah ada kecuali jika perlu integrasi):
+
+### Backend:
+- `app/api/agent/generate/route.ts` – endpoint SSE agent.
+- `lib/agent-parser.ts` – fungsi untuk parsing stream LLM menjadi event file.
+- `lib/build-preview-html.ts` – fungsi untuk menyusun HTML preview dari file‑file.
+
+### Frontend:
+- `components/agent/AgentCodePanel.tsx` – panel utama yang menggabungkan file tree, editor, dan input prompt.
+- `components/agent/FileTree.tsx` – daftar file vertikal.
+- `components/agent/CodeEditor.tsx` – editor kode dengan syntax highlighting dan streaming update.
+- `components/preview/LivePreviewPanel.tsx` – panel kanan dengan browser frame dan iframe.
+- `components/preview/BrowserFrame.tsx` – simulated browser toolbar.
+- `components/preview/DeviceControls.tsx` – tombol device.
+
+- Tipe data: `types/agent-types.ts`.
+
+---
+
+## 8. ATURAN KETAT
+- Kode harus TypeScript strict.
+- Tidak boleh menyimpan API key pengguna di server; OpenRouter key hanya dikirim per request.
+- Streaming harus efisien, jangan buffering besar.
+- Preview harus diperbarui langsung tanpa reload manual.
+- Jika user menghentikan generasi (tombol stop), hentikan stream dan tutup koneksi.
+- Tampilkan error dengan jelas jika terjadi kegagalan.
+- Jangan lupa footer "Dibuat dengan sepenuh hati oleh Andikaa Saputraa" di halaman Agent ini juga (tetap muncul di layout).
+
+---
