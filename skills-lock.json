@@ -43,6 +43,12 @@
       "skillPath": "guides/photo/ai-product-photography/SKILL.md",
       "computedHash": "6eaf0313f62bd9bfe70d22a29fa33daa6b290bda7a1959584d8febb4fee92a48"
     },
+    "ai-sdk": {
+      "source": "vercel/ai",
+      "sourceType": "github",
+      "skillPath": "skills/use-ai-sdk/SKILL.md",
+      "computedHash": "2249889eb47ef0f61c4dba4cf2afe01c1c8dd793bb4c24230347c1ab909bb7dd"
+    },
     "ai-social-media-content": {
       "source": "skill-zero/s",
       "sourceType": "github",
@@ -480,6 +486,12 @@
       "sourceType": "github",
       "skillPath": "plugins/dotnet-contribution/skills/dotnet-backend-patterns/SKILL.md",
       "computedHash": "b9af7afad1aba77bf12adfc523062292b11f629de5c4595a68ae0bb2103f0a28"
+    },
+    "e2e-testing-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/developer-essentials/skills/e2e-testing-patterns/SKILL.md",
+      "computedHash": "37ea37e42a81c926ebd81924691a15fb657df7c8a52b863c34967e5ab99cdc22"
     },
     "elysiajs": {
       "source": "elysiajs/skills",
@@ -1051,6 +1063,12 @@
       "skillPath": "skills/product-marketing-context/SKILL.md",
       "computedHash": "21dd05f970ba54406d7405f92240853f809d0fed09ef6ca2a9204abcdd21548a"
     },
+    "professional-communication": {
+      "source": "softaworks/agent-toolkit",
+      "sourceType": "github",
+      "skillPath": "skills/professional-communication/SKILL.md",
+      "computedHash": "4ecfeba923ab6dea1ac6e4a3d05a1a7f23b2af3dce690f4aad8167ae92b14397"
+    },
     "programmatic-seo": {
       "source": "coreyhaines31/marketingskills",
       "sourceType": "github",
@@ -1195,6 +1213,12 @@
       "skillPath": "skills/referral-program/SKILL.md",
       "computedHash": "baefa6ed79c591d16e3056f3d8544fa2d60b896a618b931f37bf89da7af518d3"
     },
+    "remembering-conversations": {
+      "source": "obra/episodic-memory",
+      "sourceType": "github",
+      "skillPath": "skills/remembering-conversations/SKILL.md",
+      "computedHash": "2a14fb2ba383270a6de1ea450d5d81d703a95f52d6521293d22bbe1ba0f93380"
+    },
     "remotion": {
       "source": "google-labs-code/stitch-skills",
       "sourceType": "github",
@@ -1248,6 +1272,12 @@
       "sourceType": "github",
       "skillPath": "skills/session-handoff/SKILL.md",
       "computedHash": "8a73adac79d965a57dc5e898a498c479b749a8fad5ba03b08aa033ad9b710437"
+    },
+    "signup-flow-cro": {
+      "source": "coreyhaines31/marketingskills",
+      "sourceType": "github",
+      "skillPath": "skills/signup-flow-cro/SKILL.md",
+      "computedHash": "8c4b9ce342ccb721eed9a4c1eb0d1ea647e5f1a77db8609509181c62636acf61"
     },
     "similarity-search-patterns": {
       "source": "wshobson/agents",
@@ -1560,6 +1590,12 @@
       "sourceType": "github",
       "skillPath": "skills/writing-plans/SKILL.md",
       "computedHash": "2b986445454a025ca2c3839f8a2024747e8cce0517948437232cd113d2719060"
+    },
+    "writing-skills": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": "skills/writing-skills/SKILL.md",
+      "computedHash": "c0a92e629e39ea91b1f54da67a6aa92723008a8ef5b500c6de078f55485937c7"
     },
     "xlsx": {
       "source": "anthropics/skills",

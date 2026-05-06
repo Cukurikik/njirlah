@@ -1,8 +1,8 @@
-const STORAGE_KEY = "njirlah_or_key";
-const SALT_KEY = "njirlah_salt";
+const SALT_KEY = "njirlah_salt_v2";
+const LEGACY_STORAGE_KEY = "njirlah_or_key";
 
 async function getBrowserFingerprint(): Promise<string> {
-  const data = [
+  return [
     navigator.userAgent,
     navigator.language,
     screen.width,
@@ -10,7 +10,6 @@ async function getBrowserFingerprint(): Promise<string> {
     screen.colorDepth,
     Intl.DateTimeFormat().resolvedOptions().timeZone,
   ].join("|");
-  return data;
 }
 
 async function deriveKey(passphrase: string): Promise<CryptoKey> {
@@ -41,7 +40,7 @@ async function deriveKey(passphrase: string): Promise<CryptoKey> {
   );
 }
 
-export async function encryptApiKey(apiKey: string): Promise<void> {
+export async function encryptValue(value: string, storageKey: string): Promise<void> {
   const passphrase = await getBrowserFingerprint();
   const key = await deriveKey(passphrase);
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -50,18 +49,18 @@ export async function encryptApiKey(apiKey: string): Promise<void> {
   const encrypted = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv },
     key,
-    enc.encode(apiKey),
+    enc.encode(value),
   );
 
   const combined = new Uint8Array(iv.length + encrypted.byteLength);
   combined.set(iv, 0);
   combined.set(new Uint8Array(encrypted), iv.length);
 
-  localStorage.setItem(STORAGE_KEY, btoa(String.fromCharCode(...combined)));
+  localStorage.setItem(storageKey, btoa(String.fromCharCode(...combined)));
 }
 
-export async function decryptApiKey(): Promise<string | null> {
-  const stored = localStorage.getItem(STORAGE_KEY);
+export async function decryptValue(storageKey: string): Promise<string | null> {
+  const stored = localStorage.getItem(storageKey);
   if (!stored) return null;
 
   try {
@@ -78,11 +77,30 @@ export async function decryptApiKey(): Promise<string | null> {
   }
 }
 
+export function clearStorageKey(storageKey: string): void {
+  localStorage.removeItem(storageKey);
+}
+
+export function hasStoredValue(storageKey: string): boolean {
+  return localStorage.getItem(storageKey) !== null;
+}
+
+export async function encryptApiKey(apiKey: string): Promise<void> {
+  return encryptValue(apiKey, LEGACY_STORAGE_KEY);
+}
+
+export async function decryptApiKey(): Promise<string | null> {
+  const fromLegacy = await decryptValue(LEGACY_STORAGE_KEY);
+  if (fromLegacy) return fromLegacy;
+  const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+  return raw ?? null;
+}
+
 export function clearApiKey(): void {
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(SALT_KEY);
+  localStorage.removeItem(LEGACY_STORAGE_KEY);
+  localStorage.removeItem("njirlah_salt");
 }
 
 export function hasStoredApiKey(): boolean {
-  return localStorage.getItem(STORAGE_KEY) !== null;
+  return localStorage.getItem(LEGACY_STORAGE_KEY) !== null;
 }

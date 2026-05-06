@@ -27,6 +27,7 @@ import AppPreviewPage from "@/pages/AppPreviewPage";
 import AgentPage from "@/pages/AgentPage";
 import LandingPage from "@/pages/LandingPage";
 import TemplatesPage from "@/pages/TemplatesPage";
+import ApiNjirPage from "@/pages/ApiNjirPage";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 1000 * 60 * 5 } },
@@ -185,6 +186,7 @@ function AppRouter() {
   if (path.endsWith("/preview")) return <AppPreviewPage />;
   if (path.endsWith("/agent")) return <AgentPage />;
   if (path.endsWith("/templates")) return <TemplatesPage />;
+  if (path.endsWith("/api-njir")) return <ApiNjirPage />;
   // /app → Agent Development workspace
   return <AppInner />;
 }

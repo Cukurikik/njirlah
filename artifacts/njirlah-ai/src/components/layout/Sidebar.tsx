@@ -276,6 +276,26 @@ export function Sidebar({ onOpenApiKey, onExport, onOpenCustomInstructions, mobi
           </AnimatePresence>
         </motion.button>
         <motion.button
+          onClick={() => { window.history.pushState({}, "", "/api-njir"); window.location.reload(); }}
+          whileHover={{ backgroundColor: "rgba(139,92,246,0.08)" }}
+          whileTap={{ scale: 0.97 }}
+          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[11px] transition-colors text-violet-400/80 hover:text-violet-300 border border-transparent hover:border-violet-500/20 ${collapsed ? "justify-center" : ""}`}
+        >
+          <Key size={12} />
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="whitespace-nowrap font-mono font-semibold"
+              >
+                API NJIR
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
+        <motion.button
           onClick={() => { window.history.pushState({}, "", "/agent"); window.location.reload(); }}
           whileHover={{ backgroundColor: "rgba(59,130,246,0.07)" }}
           whileTap={{ scale: 0.97 }}

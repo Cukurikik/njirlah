@@ -1,85 +1,59 @@
 # NJIRLAH AI
 
-A premium multi-model AI chat platform with BYOK OpenRouter support and built-in Cloudflare Workers AI. Features a full Agent Code Generator that streams multi-file projects in real time.
+Multi-model AI chat platform supporting 300+ LLMs across OpenRouter, Cloudflare Workers AI, Alibaba Cloud Bailian, and custom OpenAI-compatible endpoints.
 
 ## Run & Operate
 
-| Command | Purpose |
-|---|---|
-| `pnpm install` | Install all workspace deps |
-| `pnpm --filter @workspace/njirlah-ai run dev` | Start frontend (reads `PORT` + `BASE_PATH` env vars) |
-| `pnpm --filter @workspace/api-server run dev` | Build + start API server on `:8080` |
-| `pnpm --filter @workspace/njirlah-ai run build` | Production build to `dist/public/` |
+```bash
+PORT=22978 BASE_PATH=/ pnpm --filter @workspace/njirlah-ai run dev
+```
 
-**Required env vars:**
-- `PORT` / `BASE_PATH` — injected by Replit for the web artifact
-- `AI_INTEGRATIONS_OPENAI_BASE_URL` + `AI_INTEGRATIONS_OPENAI_API_KEY` — Replit built-in AI (optional, falls back to Cloudflare)
-- `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` — server-side Cloudflare Workers AI (optional)
-- `VITE_UNICORN_STUDIO_PROJECT_ID` — optional Unicorn.Studio background project ID
+Workflow: `Start application` (auto-configured, port 22978)
 
 ## Stack
 
-- **Frontend**: React 19 + Vite 7 + TypeScript · Tailwind CSS v4 · shadcn/ui (Radix) · Framer Motion · Zustand · TanStack Query
-- **Backend**: Express + TypeScript + esbuild · pino logging · express-rate-limit
-- **Crypto**: Web Crypto API (AES-GCM + PBKDF2) for encrypted key storage
-- **Other**: JSZip (ZIP download) · canvas-confetti · react-syntax-highlighter · date-fns
+- React 19 + Vite 7 (TypeScript strict)
+- Tailwind CSS 4 + shadcn/ui
+- Framer Motion + GSAP + react-spring + anime.js
+- Zustand (state management)
+- Web Crypto API — AES-GCM encryption for all API keys in localStorage
+- TanStack React Query
 
 ## Where things live
 
 ```
-artifacts/
-  njirlah-ai/src/
-    App.tsx                    # Routing + top-level layout
-    pages/                     # ChatPage (AppInner), AnimationsPage, AgentPage, AppPreviewPage
-    components/
-      chat/                    # ChatArea, ChatBubble, ChatInput, ModelSelector, CodeBlock…
-      agent/                   # AgentCodePanel, FileTree, CodeEditor
-      layout/                  # Header, Sidebar, Footer, Background, NJIRLAHLogo, CommandPalette, CursorTrail
-      animations/              # 8 animation showcase sections (50+ demos)
-      compare/                 # CompareView, CompareModelPicker
-      preview/                 # LivePreviewPanel, BrowserFrame, DeviceSimulator
-    store/                     # Zustand stores: chat, api-key, agent, model, compare, appearance
-    hooks/                     # useChat.ts, useCompareChat.ts
-    lib/                       # openrouter.ts, cloudflare.ts, encryption.ts, build-preview-html.ts
-  api-server/src/
-    routes/                    # chat.ts (replit/openrouter/cloudflare), agent.ts (SSE), cloudflare.ts (models)
-    app.ts                     # Express setup, rate limiting
+artifacts/njirlah-ai/src/
+  pages/         # Route-level pages (LandingPage, ApiNjirPage, ChatPage, …)
+  components/
+    chat/        # ChatArea, ModelSelector, ApiKeyModal, …
+    api-njir/    # ProviderCard, CustomProviderForm
+    layout/      # Sidebar, Header, Background, …
+  store/         # Zustand stores (all-api-keys-store, chat-store, model-store, …)
+  lib/           # encryption.ts, openrouter.ts, cloudflare.ts
 ```
-
-Schema / API contracts: see `artifacts/api-server/src/routes/`
 
 ## Architecture decisions
 
-- **Client-side encryption**: OpenRouter keys are encrypted with AES-GCM + PBKDF2 before persisting to localStorage — the server never receives the raw key, only forwards it
-- **Vite proxy**: All `/api` calls proxy to `localhost:8080` (the api-server) to avoid CORS and keep the key forwarding seamless
-- **SPA routing**: `AppRouter` in `App.tsx` reads `window.location.pathname` directly (no react-router) — fine for a 4-page app
-- **SSE agent streaming**: The agent generates multi-file projects via Server-Sent Events; the frontend parses `file_start / file_chunk / file_end / done / error` events
-- **Unicorn.Studio**: Background supports an optional Unicorn.Studio project via `VITE_UNICORN_STUDIO_PROJECT_ID`; falls back to a canvas-based neon orb animation
+- All API keys encrypted via AES-GCM (PBKDF2 key derivation from browser fingerprint) before localStorage
+- `all-api-keys-store.ts` is the single source of truth for all 56 BYOK providers + custom providers
+- Routing is simple path-based (no React Router) — `AppRouter` in `App.tsx` checks `window.location.pathname`
+- ModelSelector reads from both openrouter and cloudflare models via React Query; custom providers via Zustand store
+- No backend required — all AI calls go directly to provider APIs from the browser
 
 ## Product
 
-- **Chat page** (`/`): Multi-model streaming chat — switch between NJIRLAH Built-in (GPT-5.4), Cloudflare Workers AI (12+ OSS models), and OpenRouter (200+ models incl. Claude, Gemini, Grok). Features: compare mode, voice input, file attachments, per-message feedback, token speed badge, edit & regenerate, custom system instructions, chat export
-- **Agent Code Generator** (`/agent`): Describe an app, get a streaming multi-file project with live preview; confetti on completion, ZIP download
-- **Animation Showcase** (`/animations`): 50+ live interactive demos — Basic, Loaders, Text & Path, Interactive, Scroll, Cursor, iOS, Advanced
-- **Live Preview** (`/preview`): iframe renderer for agent-generated HTML/JSX/CSS files
+- **Chat page (`/`)**: Multi-model chat with sidebar history, model selector (300+ models), compare mode, agent dev panel
+- **API NJIR (`/api-njir`)**: Dashboard for all API keys — OpenRouter + 56 BYOK providers, Cloudflare, Alibaba Bailian, Custom (Cline-compatible)
+- **Templates, Animations, Agent pages**: Additional tools
 
 ## User preferences
 
-- Creator credit: "Dibuat dengan ❤️ oleh Andikaa Saputraa" — always in the footer
-- Tagline: "membangun masa depan AI yang bebas, tanpa batas, ala kadarnya tapi njir lah keren"
-- Color scheme: purple #A855F7, cyan #06B6D4, pink #EC4899 on `#05050A` background
-- Logo: NJIRLAH unicorn SVG with glitch text + 3-click easter egg (dancing unicorn)
-- All primary copy/labels in a mix of Indonesian and English
+- Footer: "Dibuat dengan sepenuh hati oleh Andikaa Saputraa"
+- Dark neon theme: purple/cyan/pink glassmorphism
+- Indonesian language in UI text
 
 ## Gotchas
 
-- `PORT` and `BASE_PATH` env vars are required by `vite.config.ts` — it throws if missing
-- API server runs on **:8080** (hard-coded in `artifacts/api-server/src/index.ts`) — Vite proxies `/api` there
-- Cloudflare fallback in `/api/replit/chat`: if `AI_INTEGRATIONS_OPENAI_BASE_URL` is missing, the built-in route falls back to Cloudflare
-- Run `pnpm install` from workspace root before starting workflows — individual package node_modules may be missing
-
-## Pointers
-
-- `.local/skills/react-vite/` — React + Vite monorepo patterns
-- `.local/skills/pnpm-workspace/` — monorepo conventions
-- `.local/skills/ai-integrations-openai/` — Replit OpenAI integration proxy
+- Vite requires `PORT` and `BASE_PATH` env vars at startup — always pass them in workflow command
+- `encryption.ts` exports both new `encryptValue`/`decryptValue` (generic, multi-key) and legacy `encryptApiKey`/`decryptApiKey` (backward compat)
+- The artifact.toml `localPort` must match PORT env var (22978)
