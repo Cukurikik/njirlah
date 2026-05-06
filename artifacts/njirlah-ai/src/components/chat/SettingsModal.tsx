@@ -1,18 +1,19 @@
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Settings2, Trash2, ShieldCheck, Database, Lock,
-  Eye, EyeOff, FileX, Globe, Info, Palette,
+  Eye, EyeOff, FileX, Globe, Info, Palette, Key,
 } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
 import { useAppearanceStore, type AccentColor, type Density } from "@/store/appearance-store";
 import { useState } from "react";
+import { BYOKPanel } from "@/components/settings/BYOKPanel";
 
 interface SettingsModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-type Section = "general" | "appearance" | "privacy";
+type Section = "general" | "byok" | "appearance" | "privacy";
 
 const ACCENT_OPTIONS: { key: AccentColor; label: string; dot: string; active: string }[] = [
   { key: "violet",  label: "Violet",  dot: "#7c3aed", active: "border-violet-500/60  text-violet-300  bg-violet-500/10" },
@@ -31,8 +32,9 @@ const DENSITY_OPTIONS: { key: Density; label: string; desc: string }[] = [
 
 const NAV: { id: Section; icon: React.ReactNode; label: string }[] = [
   { id: "general",    icon: <Settings2 size={12} />,   label: "General" },
-  { id: "appearance", icon: <Palette size={12} />,     label: "Appearance" },
-  { id: "privacy",    icon: <ShieldCheck size={12} />, label: "Privacy & Data" },
+  { id: "byok",       icon: <Key size={12} />,          label: "API Keys" },
+  { id: "appearance", icon: <Palette size={12} />,      label: "Appearance" },
+  { id: "privacy",    icon: <ShieldCheck size={12} />,  label: "Privacy" },
 ];
 
 export function SettingsModal({ open, onClose }: SettingsModalProps) {
@@ -68,8 +70,8 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
             initial={{ opacity: 0, scale: 0.95, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 280, damping: 26 } }}
             exit={{ opacity: 0, scale: 0.96, y: 8, transition: { duration: 0.15 } }}
-            className="relative w-full max-w-xl flex flex-col rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden"
-            style={{ background: "#07070F", maxHeight: "min(600px, 90vh)" }}
+            className="relative w-full max-w-2xl flex flex-col rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden"
+            style={{ background: "#07070F", maxHeight: "min(700px, 90vh)" }}
           >
             {/* Header */}
             <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.06] flex-shrink-0">
@@ -78,7 +80,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
               </div>
               <div className="flex-1">
                 <h2 className="text-sm font-semibold text-white/85">Settings</h2>
-                <p className="text-[10px] text-white/25 font-mono mt-0.5">NJIRLAH AI · Preferences</p>
+                <p className="text-[10px] text-white/25 font-mono mt-0.5">NJIRLAH AI · Preferences & API Keys</p>
               </div>
               <button onClick={onClose} className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/[0.04] transition-colors">
                 <X size={14} />
@@ -105,7 +107,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
               </div>
 
               {/* Content */}
-              <div className="flex-1 p-5 space-y-5 overflow-y-auto">
+              <div className="flex-1 p-5 space-y-5 overflow-y-auto scrollbar-thin scrollbar-thumb-violet scrollbar-track-transparent">
 
                 {/* ── GENERAL ── */}
                 {section === "general" && (
@@ -163,11 +165,12 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                       <h3 className="text-[10px] font-mono text-white/25 tracking-widest uppercase">Keyboard Shortcuts</h3>
                       <div className="space-y-1 text-[11px]">
                         {[
-                          ["Send message",      "Enter ↵"],
-                          ["New line",          "Shift + Enter"],
-                          ["Edit last message", "↑ Arrow"],
-                          ["Voice input",       "Click 🎤"],
-                          ["Attach file",       "Click 📎"],
+                          ["Send message",        "Enter ↵"],
+                          ["New line",            "Shift + Enter"],
+                          ["Slash commands",      "/ at start"],
+                          ["Command palette",     "⌘/Ctrl + K"],
+                          ["Voice input",         "Click 🎤"],
+                          ["Attach file",         "Click 📎"],
                         ].map(([action, key]) => (
                           <div key={action} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-white/[0.015] border border-white/[0.04]">
                             <span className="text-white/35">{action}</span>
@@ -189,6 +192,9 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                     </div>
                   </>
                 )}
+
+                {/* ── BYOK ── */}
+                {section === "byok" && <BYOKPanel />}
 
                 {/* ── APPEARANCE ── */}
                 {section === "appearance" && (
@@ -251,7 +257,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                   </>
                 )}
 
-                {/* ── PRIVACY & DATA ── */}
+                {/* ── PRIVACY ── */}
                 {section === "privacy" && (
                   <div className="space-y-4">
                     <div className="px-3 py-3 rounded-xl border border-green-500/20 bg-green-500/[0.04]">
@@ -267,9 +273,9 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                     <div className="space-y-2">
                       <h3 className="text-[10px] font-mono text-white/25 tracking-widest uppercase">What We Store</h3>
                       {[
-                        { icon: <Lock size={12} className="text-violet-400" />, title: "API Keys", desc: "Encrypted with AES-GCM in your browser's localStorage. Never transmitted anywhere.", status: "Local only" },
+                        { icon: <Lock size={12} className="text-violet-400" />, title: "API Keys", desc: "Base64-encoded and stored only in your browser's localStorage. Never transmitted to our servers.", status: "Local only" },
                         { icon: <Database size={12} className="text-blue-400" />, title: "Chat History", desc: "Persisted in localStorage via Zustand persist. We have zero access to your conversations.", status: "Local only" },
-                        { icon: <Palette size={12} className="text-amber-400" />, title: "Preferences", desc: "Theme, accent, density settings stored in localStorage.", status: "Local only" },
+                        { icon: <Palette size={12} className="text-amber-400" />, title: "Preferences", desc: "Theme, accent, density, dev mode settings stored in localStorage.", status: "Local only" },
                       ].map((item) => (
                         <div key={item.title} className="flex gap-3 px-3 py-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                           <div className="mt-0.5 flex-shrink-0">{item.icon}</div>
@@ -297,15 +303,6 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                           <span className="text-[11px] text-white/35">{item.text}</span>
                         </div>
                       ))}
-                    </div>
-
-                    <div className="space-y-2">
-                      <h3 className="text-[10px] font-mono text-white/25 tracking-widest uppercase">Third-Party Providers</h3>
-                      <div className="px-3 py-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                        <p className="text-[11px] text-white/30 leading-relaxed">
-                          Messages go directly from your browser to the AI provider you selected (OpenAI, Anthropic, Cloudflare, OpenRouter). Each provider has their own privacy policy. NJIRLAH AI is only a client — we are never in the middle of that connection.
-                        </p>
-                      </div>
                     </div>
                   </div>
                 )}

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useApiKeyStore } from "@/store/api-key-store";
 import { useChatStore } from "@/store/chat-store";
 import { useCompareStore } from "@/store/compare-store";
+import { useByokStore } from "@/store/byok-store";
 import { Background } from "@/components/layout/Background";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
@@ -22,6 +23,8 @@ import { CommandPalette } from "@/components/layout/CommandPalette";
 import AnimationsPage from "@/pages/AnimationsPage";
 import AppPreviewPage from "@/pages/AppPreviewPage";
 import AgentPage from "@/pages/AgentPage";
+import LandingPage from "@/pages/LandingPage";
+import TemplatesPage from "@/pages/TemplatesPage";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 1000 * 60 * 5 } },
@@ -40,10 +43,11 @@ function AppInner() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { loadKey } = useApiKeyStore();
+  const { loadAll } = useByokStore();
   const { chats, createChat } = useChatStore();
   const { isActive: compareActive, setActive: setCompareActive } = useCompareStore();
 
-  useEffect(() => { loadKey(); }, [loadKey]);
+  useEffect(() => { loadKey(); loadAll(); }, [loadKey, loadAll]);
   useEffect(() => { if (chats.length === 0) createChat(); }, []);
 
   const handlePaletteAction = (action: string) => {
@@ -56,6 +60,7 @@ function AppInner() {
       case "settings": setSettingsOpen(true); break;
       case "instructions": setCustomInstructionsOpen(true); break;
       case "dev-panel": setDevPanelOpen((v) => !v); break;
+      case "templates": window.history.pushState({}, "", "/templates"); window.location.reload(); break;
     }
   };
 
@@ -137,9 +142,11 @@ function AppInner() {
 
 function AppRouter() {
   const path = window.location.pathname;
+  if (path === "/" || path === "") return <LandingPage />;
   if (path.endsWith("/animations")) return <AnimationsPage />;
   if (path.endsWith("/preview")) return <AppPreviewPage />;
   if (path.endsWith("/agent")) return <AgentPage />;
+  if (path.endsWith("/templates")) return <TemplatesPage />;
   return <AppInner />;
 }
 

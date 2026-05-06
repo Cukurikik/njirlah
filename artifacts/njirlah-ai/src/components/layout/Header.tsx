@@ -3,6 +3,7 @@ import { Activity, Code2, Menu, Settings, Command } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
 import { NJIRLAHLogo } from "@/components/layout/NJIRLAHLogo";
 import { ApiStatusBadge } from "@/components/chat/ApiStatusBadge";
+import { DevModeSelector } from "@/components/workspace/DevModeSelector";
 
 interface HeaderProps {
   onToggleDevPanel?: () => void;
@@ -19,10 +20,10 @@ export function Header({ onToggleDevPanel, devPanelOpen, onOpenMobileSidebar, on
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" as const }}
-      className="relative flex items-center gap-3 px-4 h-12 border-b border-white/[0.06] flex-shrink-0"
+      className="relative flex items-center gap-3 px-4 h-14 border-b border-white/[0.06] flex-shrink-0"
       style={{ background: "#05050A" }}
     >
-      {/* Streaming progress bar at very top */}
+      {/* Streaming progress bar */}
       <AnimatePresence>
         {isStreaming && (
           <motion.div
@@ -35,6 +36,7 @@ export function Header({ onToggleDevPanel, devPanelOpen, onOpenMobileSidebar, on
           />
         )}
       </AnimatePresence>
+
       {/* Mobile hamburger */}
       <motion.button
         onClick={onOpenMobileSidebar}
@@ -47,8 +49,10 @@ export function Header({ onToggleDevPanel, devPanelOpen, onOpenMobileSidebar, on
       {/* Logo */}
       <NJIRLAHLogo size={22} showText className="shrink-0" />
 
-      {/* Spacer */}
-      <div className="flex-1" />
+      {/* Dev mode selector — center */}
+      <div className="flex-1 flex items-center justify-center">
+        <DevModeSelector />
+      </div>
 
       <div className="flex items-center gap-2">
         {/* API status */}

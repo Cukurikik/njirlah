@@ -236,6 +236,46 @@ export function Sidebar({ onOpenApiKey, onExport, onOpenCustomInstructions, mobi
       {/* Footer actions */}
       <div className="px-2 py-2 border-t border-white/[0.05] space-y-0.5">
         <motion.button
+          onClick={() => { window.history.pushState({}, "", "/"); window.location.reload(); }}
+          whileHover={{ backgroundColor: "rgba(124,77,255,0.07)" }}
+          whileTap={{ scale: 0.97 }}
+          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[11px] transition-colors text-violet-400/60 hover:text-violet-400 ${collapsed ? "justify-center" : ""}`}
+        >
+          <span style={{ fontSize: 12 }}>🏠</span>
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="whitespace-nowrap font-mono"
+              >
+                Landing Page
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
+        <motion.button
+          onClick={() => { window.history.pushState({}, "", "/templates"); window.location.reload(); }}
+          whileHover={{ backgroundColor: "rgba(251,146,60,0.07)" }}
+          whileTap={{ scale: 0.97 }}
+          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[11px] transition-colors text-orange-400/60 hover:text-orange-400 ${collapsed ? "justify-center" : ""}`}
+        >
+          <span style={{ fontSize: 12 }}>⚡</span>
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="whitespace-nowrap font-mono"
+              >
+                Templates
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
+        <motion.button
           onClick={() => { window.history.pushState({}, "", "/agent"); window.location.reload(); }}
           whileHover={{ backgroundColor: "rgba(59,130,246,0.07)" }}
           whileTap={{ scale: 0.97 }}

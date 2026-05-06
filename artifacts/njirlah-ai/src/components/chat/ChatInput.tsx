@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
-import { ArrowUp, Loader2, Paperclip, Mic, MicOff, X, GitCompare, Check } from "lucide-react";
+import { ArrowUp, Loader2, Paperclip, Mic, MicOff, X, GitCompare, Check, Zap } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
 import { useChat } from "@/hooks/useChat";
 import { ModelSelector } from "@/components/chat/ModelSelector";
+import { useDevModeStore } from "@/store/dev-mode-store";
 
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
@@ -34,6 +35,64 @@ interface Attachment {
   type: string;
 }
 
+interface SlashCommand {
+  cmd: string;
+  desc: string;
+  icon: string;
+  expand: (input: string) => string;
+}
+
+const SLASH_COMMANDS: SlashCommand[] = [
+  {
+    cmd: "/explain",
+    desc: "Explain the selected code in detail",
+    icon: "📖",
+    expand: (input) => input.replace("/explain", "Please explain this code in detail, step by step:"),
+  },
+  {
+    cmd: "/refactor",
+    desc: "Refactor for readability and performance",
+    icon: "♻️",
+    expand: (input) => input.replace("/refactor", "Please refactor this code for better readability, maintainability, and performance:"),
+  },
+  {
+    cmd: "/debug",
+    desc: "Find and fix bugs",
+    icon: "🐛",
+    expand: (input) => input.replace("/debug", "Please analyze this code, identify any bugs or issues, and provide fixes:"),
+  },
+  {
+    cmd: "/test",
+    desc: "Write unit tests",
+    icon: "✅",
+    expand: (input) => input.replace("/test", "Please write comprehensive unit tests for this code using the appropriate testing framework:"),
+  },
+  {
+    cmd: "/docs",
+    desc: "Generate documentation",
+    icon: "📝",
+    expand: (input) => input.replace("/docs", "Please generate complete documentation (JSDoc/docstrings, README, usage examples) for this code:"),
+  },
+  {
+    cmd: "/optimize",
+    desc: "Optimize for speed and efficiency",
+    icon: "⚡",
+    expand: (input) => input.replace("/optimize", "Please optimize this code for maximum performance, efficiency, and speed:"),
+  },
+  {
+    cmd: "/convert",
+    desc: "Convert to another language/framework",
+    icon: "🔄",
+    expand: (input) => input.replace("/convert", "Please convert this code to the target language/framework while maintaining all functionality:"),
+  },
+  {
+    cmd: "/review",
+    desc: "Code review with suggestions",
+    icon: "🔍",
+    expand: (input) => input.replace("/review", "Please do a thorough code review and provide detailed suggestions for improvement:"),
+  },
+];
+
 interface ChatInputProps {
   onOpenCompare?: () => void;
 }
@@ -45,15 +104,24 @@ export function ChatInput({ onOpenCompare }: ChatInputProps) {
   const [voiceSupported] = useState(
     () => !!(window.SpeechRecognition || window.webkitSpeechRecognition)
   );
+  const [slashOpen, setSlashOpen] = useState(false);
+  const [slashFilter, setSlashFilter] = useState("");
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const { isStreaming } = useChatStore();
   const { sendMessage } = useChat();
+  const { getActiveConfig } = useDevModeStore();
+  const devConfig = getActiveConfig();
 
   const handleSend = useCallback(async () => {
     let msg = input.trim();
     if ((!msg && attachments.length === 0) || isStreaming) return;
+
+    // Expand slash command if present
+    const matchedCmd = SLASH_COMMANDS.find((c) => msg.startsWith(c.cmd));
+    if (matchedCmd) msg = matchedCmd.expand(msg);
 
     if (attachments.length > 0) {
       const attachText = attachments
@@ -64,11 +132,15 @@ export function ChatInput({ onOpenCompare }: ChatInputProps) {
 
     setInput("");
     setAttachments([]);
+    setSlashOpen(false);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
     await sendMessage(msg);
   }, [input, attachments, isStreaming, sendMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (slashOpen) {
+      if (e.key === "Escape") { e.preventDefault(); setSlashOpen(false); return; }
+    }
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
@@ -77,6 +149,26 @@ export function ChatInput({ onOpenCompare }: ChatInputProps) {
     if (!el) return;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setInput(val);
+
+    // Slash command detection
+    if (val.startsWith("/") && !val.includes(" ")) {
+      const filter = val.slice(1).toLowerCase();
+      setSlashFilter(filter);
+      setSlashOpen(true);
+    } else {
+      setSlashOpen(false);
+    }
+  };
+
+  const applySlashCommand = (cmd: SlashCommand) => {
+    setInput(cmd.cmd + " ");
+    setSlashOpen(false);
+    textareaRef.current?.focus();
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,6 +210,10 @@ export function ChatInput({ onOpenCompare }: ChatInputProps) {
 
   const hasContent = input.trim().length > 0 || attachments.length > 0;
 
+  const filteredCommands = SLASH_COMMANDS.filter((c) =>
+    !slashFilter || c.cmd.slice(1).includes(slashFilter) || c.desc.toLowerCase().includes(slashFilter)
+  );
+
   /* Send button magnetic spring */
   const btnX = useMotionValue(0);
   const btnY = useMotionValue(0);
@@ -128,15 +224,11 @@ export function ChatInput({ onOpenCompare }: ChatInputProps) {
   const handleSendMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!hasContent) return;
     const r = e.currentTarget.getBoundingClientRect();
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-    btnX.set((e.clientX - cx) * 0.35);
-    btnY.set((e.clientY - cy) * 0.35);
+    btnX.set((e.clientX - r.left - r.width / 2) * 0.35);
+    btnY.set((e.clientY - r.top - r.height / 2) * 0.35);
   };
-
   const handleSendMouseLeave = () => { btnX.set(0); btnY.set(0); };
 
-  /* Ripple on send */
   const [ripple, setRipple] = useState<{ x: number; y: number; id: number } | null>(null);
   const [justSent, setJustSent] = useState(false);
 
@@ -159,11 +251,33 @@ export function ChatInput({ onOpenCompare }: ChatInputProps) {
     >
       <div className="max-w-3xl mx-auto space-y-2">
 
-        {/* ── Model row + Compare button ── */}
+        {/* ── Model row + mode badge + Compare + Templates ── */}
         <div className="flex items-center gap-2 px-1">
           <span className="text-[10px] text-white/15 font-mono tracking-widest uppercase">Model</span>
           <ModelSelector />
           <div className="flex-1" />
+
+          {/* Dev mode stacks hint */}
+          <div className="hidden md:flex items-center gap-1">
+            {devConfig.stacks.slice(0, 3).map((s) => (
+              <span key={s} className="text-[9px] font-mono text-white/15 border border-white/[0.04] px-1.5 py-0.5 rounded">
+                {s}
+              </span>
+            ))}
+          </div>
+
+          {/* Templates */}
+          <motion.button
+            onClick={() => { window.history.pushState({}, "", "/templates"); window.location.reload(); }}
+            whileHover={{ backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)" }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-white/[0.07] text-[10px] font-mono text-white/25 hover:text-violet-300 transition-all"
+            title="Prompt Templates"
+          >
+            <Zap size={11} />
+            <span className="hidden sm:inline">Templates</span>
+          </motion.button>
+
           <motion.button
             onClick={onOpenCompare}
             whileHover={{ backgroundColor: "rgba(139,92,246,0.09)", borderColor: "rgba(139,92,246,0.3)" }}
@@ -175,6 +289,36 @@ export function ChatInput({ onOpenCompare }: ChatInputProps) {
             <span className="hidden sm:inline">Compare</span>
           </motion.button>
         </div>
+
+        {/* Slash command picker */}
+        <AnimatePresence>
+          {slashOpen && filteredCommands.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.97 }}
+              transition={{ duration: 0.15 }}
+              className="rounded-xl border border-white/[0.08] overflow-hidden shadow-2xl"
+              style={{ background: "#07070F" }}
+            >
+              <div className="px-3 py-2 border-b border-white/[0.05]">
+                <p className="text-[9px] font-mono text-white/20 tracking-widest uppercase">Slash Commands · press Esc to close</p>
+              </div>
+              {filteredCommands.map((cmd) => (
+                <motion.button
+                  key={cmd.cmd}
+                  onClick={() => applySlashCommand(cmd)}
+                  whileHover={{ backgroundColor: "rgba(255,255,255,0.03)" }}
+                  className="w-full text-left flex items-center gap-3 px-3 py-2.5 transition-colors"
+                >
+                  <span className="text-base flex-shrink-0">{cmd.icon}</span>
+                  <span className="text-[12px] font-mono text-violet-300 font-semibold w-20 flex-shrink-0">{cmd.cmd}</span>
+                  <span className="text-[11px] text-white/35">{cmd.desc}</span>
+                </motion.button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Attachment chips */}
         <AnimatePresence>
@@ -253,10 +397,10 @@ export function ChatInput({ onOpenCompare }: ChatInputProps) {
           <textarea
             ref={textareaRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleChange}
             onKeyDown={handleKeyDown}
             onInput={handleInput}
-            placeholder="Message NJIRLAH AI..."
+            placeholder={`Message NJIRLAH AI… (${devConfig.label}) · type / for slash commands`}
             rows={1}
             className="flex-1 bg-transparent text-sm text-white/85 placeholder-white/20 resize-none focus:outline-none leading-relaxed max-h-44 scrollbar-thin font-sans"
           />
@@ -275,7 +419,7 @@ export function ChatInput({ onOpenCompare }: ChatInputProps) {
             </motion.button>
           )}
 
-          {/* Send button — magnetic + ripple + icon morph */}
+          {/* Send button */}
           <motion.button
             ref={sendBtnRef}
             onClick={handleSendWithRipple}
@@ -289,7 +433,6 @@ export function ChatInput({ onOpenCompare }: ChatInputProps) {
             transition={{ duration: 0.2 }}
             className="relative p-2 rounded-lg flex-shrink-0 transition-all disabled:cursor-not-allowed mb-0.5 overflow-hidden"
           >
-            {/* Ripple effect */}
             <AnimatePresence>
               {ripple && (
                 <motion.span
@@ -328,7 +471,7 @@ export function ChatInput({ onOpenCompare }: ChatInputProps) {
           transition={{ delay: 0.5 }}
           className="text-[10px] text-white/15 text-center font-mono tracking-wide"
         >
-          Enter ↵ send · Shift+Enter new line · 📎 attach · 🎤 voice
+          Enter ↵ send · Shift+Enter new line · / slash commands · 📎 attach · 🎤 voice
         </motion.p>
       </div>
     </motion.div>
